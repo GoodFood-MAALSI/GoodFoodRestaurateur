@@ -22,8 +22,8 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - name: Upgrade npm to 22.12
-      run: npm install -g npm@22.12
+    - name: Upgrade npm to 22.13
+      run: npm install -g npm@22.13
     - run: npm ci
     - run: npm run build --if-present
     - run: npm test
