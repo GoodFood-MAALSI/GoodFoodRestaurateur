@@ -1,9 +1,14 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { RestaurantModule } from './domain/restaurant/restaurant.module';
+import { RestaurantTypeModule } from './domain/restaurant_type/restaurant_type.module';
+import { UsersModule } from './domain/users/users.module';
+import { DatabaseModule } from './database/databas.module';
+import { MenuItemsModule } from './domain/menu_items/menu_items.module';
 
 @Module({
-  imports: [],
+  imports: [DatabaseModule,RestaurantModule,RestaurantTypeModule,UsersModule,MenuItemsModule],
   controllers: [AppController],
   providers: [AppService],
 })
