@@ -2,6 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { RestaurantService } from './restaurant.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
+import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
+import { CreateMenuCategoryDto } from '../menu_categories/dto/create-menu_category.dto';
 
 @Controller('restaurant')
 export class RestaurantController {
@@ -30,5 +32,18 @@ export class RestaurantController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.restaurantService.remove(+id);
+  }
+
+  @Get(':id/categories')
+  findCategoriesByRestaurant(@Param('id') id: string): Promise<MenuCategory[]> {
+    return this.restaurantService.getMenuCategoriesByRestaurantId(+id);
+  }
+
+  @Post(':id/categories')
+  addCategoryToRestaurant(
+    @Param('id') id: string,
+    @Body() createMenuCategoryDto: CreateMenuCategoryDto,
+  ): Promise<MenuCategory> {
+    return this.restaurantService.addMenuCategoryToRestaurant(+id, createMenuCategoryDto);
   }
 }

@@ -37,4 +37,6 @@ export class CreateRestaurantDto {
         @IsNotEmpty()
         phone_number: number;
 
+        @IsBoolean()
+        is_open: boolean;
 }

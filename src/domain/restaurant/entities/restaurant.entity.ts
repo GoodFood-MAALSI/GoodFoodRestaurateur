@@ -1,7 +1,9 @@
+import { MenuCategory } from 'src/domain/menu_categories/entities/menu_category.entity';
 import {
     Column,
     CreateDateColumn,
     Entity,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
   } from 'typeorm';
@@ -37,10 +39,16 @@ import {
   
     @Column({ unique: true })
     phone_number: number;
+
+    @Column()
+    is_open : boolean;
   
     @CreateDateColumn()
     createdAt: Date;
   
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @OneToMany(() => MenuCategory, (menuCategory) => menuCategory.restaurant)
+    menuCategories: MenuCategory[];
   }

@@ -6,9 +6,11 @@ import { RestaurantTypeModule } from './domain/restaurant_type/restaurant_type.m
 import { UsersModule } from './domain/users/users.module';
 import { DatabaseModule } from './database/databas.module';
 import { MenuItemsModule } from './domain/menu_items/menu_items.module';
+import { MenuCategoriesModule } from './domain/menu_categories/menu_categories.module';
+import { MenuItemOptionsModule } from './domain/menu_item_options/menu_item_options.module';
 
 @Module({
-  imports: [DatabaseModule,RestaurantModule,RestaurantTypeModule,UsersModule,MenuItemsModule],
+  imports: [DatabaseModule,RestaurantModule,RestaurantTypeModule,UsersModule,MenuItemsModule,MenuCategoriesModule,MenuItemOptionsModule],
   controllers: [AppController],
   providers: [AppService],
 })

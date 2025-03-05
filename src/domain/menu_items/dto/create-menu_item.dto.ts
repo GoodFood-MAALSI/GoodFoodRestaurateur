@@ -1,8 +1,9 @@
+import { isNumber } from "@nestjs/class-validator";
 import { IsBoolean, IsDecimal, IsNotEmpty, IsNumber, IsString, isDecimal } from "class-validator";
 
 
 export class CreateMenuItemDto {
-     @IsString()
+    @IsString()
     @IsNotEmpty()
     name: string;
 
@@ -27,4 +28,5 @@ export class CreateMenuItemDto {
     @IsBoolean()
     @IsNotEmpty()
     isAvailable: boolean;
+    
 }
