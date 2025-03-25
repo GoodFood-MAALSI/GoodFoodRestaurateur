@@ -4,12 +4,16 @@ import { UpdateMenuItemOptionDto } from './dto/update-menu_item_option.dto';
 import { MenuItemOption } from './entities/menu_item_option.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { MenuItemOptionValue } from '../menu_item_option_values/entities/menu_item_option_value.entity';
+import { CreateMenuItemOptionValueDto } from '../menu_item_option_values/dto/create-menu_item_option_value.dto';
 
 @Injectable()
 export class MenuItemOptionsService {
     constructor(
       @InjectRepository(MenuItemOption)
       private readonly menuItemOptionRepository: Repository<MenuItemOption>,
+      @InjectRepository(MenuItemOptionValue)
+      private readonly menuItemOptionValueRepository: Repository<MenuItemOptionValue>,
     ) {}
  
    async create(createMenuItemOptionDto: CreateMenuItemOptionDto) {
@@ -51,4 +55,32 @@ export class MenuItemOptionsService {
      }
      return await this.menuItemOptionRepository.remove(menuItemOption);
    }
+
+   async getMenuOptionValuessByMenuOptionId(menuItemOptionId: number): Promise<MenuItemOptionValue[]> {
+    const menuItemOption = await this.menuItemOptionRepository.findOne({
+      where: { id: menuItemOptionId },
+      relations: ['menuItemOptionValues'],
+    });
+
+    if (!menuItemOption) {
+      throw new NotFoundException(`MenuItemId avec l'ID ${menuItemOption} non trouvé`);
+    }
+
+    return menuItemOption.menuItemOptionValues;
+  }
+
+  async addMenuItemOptionValueToMenuItemOption(menuItemOptionId: number, createMenuItemOptionValueDto: CreateMenuItemOptionValueDto): Promise<MenuItemOptionValue> {
+    const menuItemOption = await this.menuItemOptionRepository.findOne({ where: { id: menuItemOptionId } });
+
+    if (!menuItemOption) {
+      throw new NotFoundException(`MenuItemOptionId avec l'ID ${menuItemOptionId} non trouvé`);
+    }
+
+    const menuItemOptionValue = this.menuItemOptionValueRepository.create({
+      ...createMenuItemOptionValueDto,
+      menuItemOption: menuItemOption,
+    });
+
+    return this.menuItemOptionValueRepository.save(menuItemOptionValue);
+  }
 }

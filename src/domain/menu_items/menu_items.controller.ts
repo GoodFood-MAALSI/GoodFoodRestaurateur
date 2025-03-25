@@ -34,16 +34,16 @@ export class MenuItemsController {
     return this.menuItemsService.remove(+id);
   }
 
-    @Get(':id/options')
-    findItemsByCategories(@Param('id') id: string): Promise<MenuItemOption[]> {
-      return this.menuItemsService.getMenuOptionsByMenuItemId(+id);
-    }
-  
-    @Post(':id/options')
-    addItemToCategory(
-      @Param('id') id: string,
-      @Body() createMenuItemOptionDto: CreateMenuItemOptionDto,
-    ): Promise<MenuItemOption> {
-      return this.menuItemsService.addMenuItemOptionToMenuItem(+id, createMenuItemOptionDto);
-    }
+  @Get(':id/options')
+  findItemsByCategories(@Param('id') id: string): Promise<MenuItemOption[]> {
+    return this.menuItemsService.getMenuOptionsByMenuItemId(+id);
+  }
+
+  @Post(':id/options')
+  addItemToCategory(
+    @Param('id') id: string,
+    @Body() createMenuItemOptionDto: CreateMenuItemOptionDto,
+  ): Promise<MenuItemOption> {
+    return this.menuItemsService.addMenuItemOptionToMenuItem(+id, createMenuItemOptionDto);
+  }
 }
