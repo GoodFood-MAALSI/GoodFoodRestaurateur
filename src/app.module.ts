@@ -13,7 +13,7 @@ import { MenuItemOptionValuesModule } from './domain/menu_item_option_values/men
 import { TestingModule } from '@nestjs/testing';
 
 @Module({
-  imports: [DatabaseModule,RestaurantModule,RestaurantTypeModule,UsersModule,MenuItemsModule,MenuCategoriesModule,MenuItemOptionsModule,MenuItemOptionValuesModule,TestingModule],
+  imports: [DatabaseModule,RestaurantModule,RestaurantTypeModule,UsersModule,MenuItemsModule,MenuCategoriesModule,MenuItemOptionsModule,MenuItemOptionValuesModule],
   controllers: [AppController],
   providers: [AppService],
 })
