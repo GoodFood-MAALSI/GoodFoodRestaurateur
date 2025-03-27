@@ -1,4 +1,4 @@
-import { isNumber } from "@nestjs/class-validator";
+import { IsBase64, isNumber } from "@nestjs/class-validator";
 import { IsBoolean, IsDecimal, IsNotEmpty, IsNumber, IsString, isDecimal } from "class-validator";
 
 
@@ -16,7 +16,7 @@ export class CreateMenuItemDto {
     @IsNotEmpty()
     description: string;
 
-    @IsString()
+    @IsBase64()
     @IsNotEmpty()
     picture: string;
 
