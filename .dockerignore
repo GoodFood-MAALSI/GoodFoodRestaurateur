@@ -6,3 +6,4 @@ npm-debug.log
 .gitignore
 .env
 sonar-project.properties
+docker-compose.yaml

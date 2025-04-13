@@ -1,0 +1,12 @@
+#Docker compose si on veux uniquement run l'api avec une bdd
+services:
+  postgres:
+    image: postgres:15
+    container_name: goodfood_restaurateur_db_container
+    ports:
+      - '5434:5434'
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: 86oQya`HI+WY455DrR
+      POSTGRES_DB: goodfood_restaurateur
+      PGPORT: 5434

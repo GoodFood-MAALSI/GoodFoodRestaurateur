@@ -1,14 +1,13 @@
 import { Module } from '@nestjs/common';
 import { MenuItemsService } from './menu_items.service';
 import { MenuItemsController } from './menu_items.controller';
-import { DatabaseModule } from 'src/database/databas.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MenuItem } from './entities/menu_item.entity';
 import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
 import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.entity';
 
 @Module({
-  imports:[DatabaseModule,TypeOrmModule.forFeature([MenuItem]),TypeOrmModule.forFeature([MenuCategory]),TypeOrmModule.forFeature([MenuItemOption])],
+  imports:[TypeOrmModule.forFeature([MenuItem]),TypeOrmModule.forFeature([MenuCategory]),TypeOrmModule.forFeature([MenuItemOption])],
   controllers: [MenuItemsController],
   providers: [MenuItemsService],
 })

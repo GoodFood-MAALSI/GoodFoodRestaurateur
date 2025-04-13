@@ -1,34 +1,48 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpException, HttpStatus } from "@nestjs/common";
+import { UsersService } from "./users.service";
+import { UpdateUserDto } from "./dtos/update-user.dto";
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
+import { User } from "./entities/user.entity";
+import { AuthGuard } from "@nestjs/passport";
 
-@Controller('users')
+@ApiTags("Users")
+@Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Get(":id")
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @ApiOperation({ summary: "Récupérer un utilisateur par ID" })
+  @ApiResponse({ status: 200, description: "Utilisateur trouvé"})
+  @ApiResponse({ status: 404, description: "Utilisateur non trouvé" })
+  async findOne(@Param("id") id: string): Promise<User> {
+    const user = await this.usersService.findOneUser({ id: +id });
+    if (!user) throw new HttpException("User not found", HttpStatus.NOT_FOUND);
+    return user;
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @Patch(":id")
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @ApiOperation({ summary: "Mettre à jour le prénom et/ou nom d'un utilisateur" })
+  @ApiResponse({ status: 200, description: "Utilisateur mis à jour"})
+  @ApiResponse({ status: 404, description: "Utilisateur non trouvé" })
+  async update(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.usersService.findOneUser({ id: +id });
+    if (!user) throw new HttpException("User not found", HttpStatus.NOT_FOUND);
+    return this.usersService.updateUser(+id, updateUserDto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @Delete(":id")
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @ApiOperation({ summary: "Supprimer définitivement un utilisateur" })
+  @ApiResponse({ status: 200, description: "Utilisateur supprimé définitivement" })
+  @ApiResponse({ status: 404, description: "Utilisateur non trouvé" })
+  async remove(@Param("id") id: string): Promise<void> {
+    const user = await this.usersService.findOneUser({ id: +id });
+    if (!user) throw new HttpException("User not found", HttpStatus.NOT_FOUND);
+    return this.usersService.deleteUser(+id);
   }
 }

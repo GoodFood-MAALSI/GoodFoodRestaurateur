@@ -3,17 +3,36 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RestaurantModule } from './domain/restaurant/restaurant.module';
 import { RestaurantTypeModule } from './domain/restaurant_type/restaurant_type.module';
-import { UsersModule } from './domain/users/users.module';
 import { DatabaseModule } from './database/databas.module';
 import { MenuItemsModule } from './domain/menu_items/menu_items.module';
 import { MenuCategoriesModule } from './domain/menu_categories/menu_categories.module';
 import { MenuItemOptionsModule } from './domain/menu_item_options/menu_item_options.module';
-import { MenuItemOptionValue } from './domain/menu_item_option_values/entities/menu_item_option_value.entity';
 import { MenuItemOptionValuesModule } from './domain/menu_item_option_values/menu_item_option_values.module';
-import { TestingModule } from '@nestjs/testing';
+import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './domain/auth/auth.module';
+import { SessionModule } from './domain/session/session.module';
+import { MailerModule } from './domain/mailer/mailer.module';
+import { MailsModule } from './domain/mails/mails.module';
+import { ForgotPasswordModule } from './domain/forgot-password/forgot-password.module';
+import { UsersModule } from './domain/users/users.module';
 
 @Module({
-  imports: [DatabaseModule,RestaurantModule,RestaurantTypeModule,UsersModule,MenuItemsModule,MenuCategoriesModule,MenuItemOptionsModule,MenuItemOptionValuesModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    DatabaseModule,
+    AuthModule,
+    SessionModule,
+    MailerModule,
+    MailsModule,
+    ForgotPasswordModule,
+    UsersModule,
+    RestaurantModule,
+    RestaurantTypeModule,
+    MenuItemsModule,
+    MenuCategoriesModule,
+    MenuItemOptionsModule,
+    MenuItemOptionValuesModule
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
