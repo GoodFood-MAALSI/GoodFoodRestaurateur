@@ -4,12 +4,14 @@ import { CreateMenuCategoryDto } from './dto/create-menu_category.dto';
 import { UpdateMenuCategoryDto } from './dto/update-menu_category.dto';
 import { MenuItem } from '../menu_items/entities/menu_item.entity';
 import { CreateMenuItemDto } from '../menu_items/dto/create-menu_item.dto';
+import { ApiBody } from '@nestjs/swagger';
 
 @Controller('menu-categories')
 export class MenuCategoriesController {
   constructor(private readonly menuCategoriesService: MenuCategoriesService) {}
 
   @Post()
+  @ApiBody({ type: CreateMenuCategoryDto })
   create(@Body() createMenuCategoryDto: CreateMenuCategoryDto) {
     return this.menuCategoriesService.create(createMenuCategoryDto);
   }
@@ -25,6 +27,7 @@ export class MenuCategoriesController {
   }
 
   @Patch(':id')
+  @ApiBody({ type: UpdateMenuCategoryDto })
   update(@Param('id') id: string, @Body() updateMenuCategoryDto: UpdateMenuCategoryDto) {
     return this.menuCategoriesService.update(+id, updateMenuCategoryDto);
   }
@@ -40,6 +43,7 @@ export class MenuCategoriesController {
   }
 
   @Post(':id/items')
+  @ApiBody({ type: CreateMenuItemDto })
   addItemToCategory(
     @Param('id') id: string,
     @Body() createMenuItemDto: CreateMenuItemDto,

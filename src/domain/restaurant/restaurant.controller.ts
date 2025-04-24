@@ -4,12 +4,15 @@ import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
 import { CreateMenuCategoryDto } from '../menu_categories/dto/create-menu_category.dto';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 
 @Controller('restaurant')
+@ApiTags('Restaurants')
 export class RestaurantController {
   constructor(private readonly restaurantService: RestaurantService) {}
 
   @Post()
+  @ApiBody({ type: CreateRestaurantDto })
   create(@Body() createRestaurantDto: CreateRestaurantDto) {
     return this.restaurantService.create(createRestaurantDto);
   }
@@ -25,6 +28,7 @@ export class RestaurantController {
   }
 
   @Patch(':id')
+  @ApiBody({ type: UpdateRestaurantDto })
   update(@Param('id') id: string, @Body() updateRestaurantDto: UpdateRestaurantDto) {
     return this.restaurantService.update(+id, updateRestaurantDto);
   }
@@ -40,6 +44,7 @@ export class RestaurantController {
   }
 
   @Post(':id/categories')
+  @ApiBody({ type: CreateMenuCategoryDto })
   addCategoryToRestaurant(
     @Param('id') id: string,
     @Body() createMenuCategoryDto: CreateMenuCategoryDto,

@@ -4,12 +4,14 @@ import { CreateMenuItemDto } from './dto/create-menu_item.dto';
 import { UpdateMenuItemDto } from './dto/update-menu_item.dto';
 import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.entity';
 import { CreateMenuItemOptionDto } from '../menu_item_options/dto/create-menu_item_option.dto';
+import { ApiBody } from '@nestjs/swagger';
 
 @Controller('menu-items')
 export class MenuItemsController {
   constructor(private readonly menuItemsService: MenuItemsService) {}
 
   @Post()
+  @ApiBody({ type: CreateMenuItemDto })
   create(@Body() createMenuItemDto: CreateMenuItemDto) {
     return this.menuItemsService.create(createMenuItemDto);
   }
@@ -25,6 +27,7 @@ export class MenuItemsController {
   }
 
   @Patch(':id')
+  @ApiBody({ type: UpdateMenuItemDto })
   update(@Param('id') id: string, @Body() updateMenuItemDto: UpdateMenuItemDto) {
     return this.menuItemsService.update(+id, updateMenuItemDto);
   }
@@ -40,7 +43,8 @@ export class MenuItemsController {
   }
 
   @Post(':id/options')
-  addItemToCategory(
+  @ApiBody({ type: CreateMenuItemOptionDto })
+  addItemOptionToItem(
     @Param('id') id: string,
     @Body() createMenuItemOptionDto: CreateMenuItemOptionDto,
   ): Promise<MenuItemOption> {

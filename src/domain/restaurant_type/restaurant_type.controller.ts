@@ -2,12 +2,14 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { RestaurantTypeService } from './restaurant_type.service';
 import { CreateRestaurantTypeDto } from './dto/create-restaurant_type.dto';
 import { UpdateRestaurantTypeDto } from './dto/update-restaurant_type.dto';
+import { ApiBody } from '@nestjs/swagger';
 
 @Controller('restaurant-type')
 export class RestaurantTypeController {
   constructor(private readonly restaurantTypeService: RestaurantTypeService) {}
 
   @Post()
+  @ApiBody({ type: CreateRestaurantTypeDto })
   create(@Body() createRestaurantTypeDto: CreateRestaurantTypeDto) {
     return this.restaurantTypeService.create(createRestaurantTypeDto);
   }
@@ -23,6 +25,7 @@ export class RestaurantTypeController {
   }
 
   @Patch(':id')
+  @ApiBody({ type: UpdateRestaurantTypeDto })
   update(@Param('id') id: string, @Body() updateRestaurantTypeDto: UpdateRestaurantTypeDto) {
     return this.restaurantTypeService.update(+id, updateRestaurantTypeDto);
   }

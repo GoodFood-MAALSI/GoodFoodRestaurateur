@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
     Column,
     CreateDateColumn,
@@ -8,9 +9,11 @@ import {
   
   @Entity()
   export class RestaurantType {
+    @ApiProperty({ example: 1 })
     @PrimaryGeneratedColumn()
     id: number;
   
+    @ApiProperty({ example: 'Italien' })
     @Column()
     name: string;
   

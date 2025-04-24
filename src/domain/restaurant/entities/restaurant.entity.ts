@@ -1,4 +1,5 @@
 import { MenuCategory } from 'src/domain/menu_categories/entities/menu_category.entity';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
     Column,
     CreateDateColumn,
@@ -10,45 +11,58 @@ import {
   
   @Entity()
   export class Restaurant {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @ApiProperty({ example: 1 })
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ApiProperty({ example: 'Le Bon Burger' })
+  @Column()
+  name: string;
+
+  @ApiProperty({ example: 'Un restaurant de burgers gourmets avec des ingrédients frais.' })
+  @Column()
+  description: string;
+
+  @ApiProperty({ example: '12' })
+  @Column()
+  street_number: string;
+
+  @ApiProperty({ example: 'Rue des Gourmands' })
+  @Column()
+  street: string;
+
+  @ApiProperty({ example: 'Wavrin' })
+  @Column()
+  city: string;
+
+  @ApiProperty({ example: '59136' })
+  @Column()
+  postal_code: string;
+
+  @ApiProperty({ example: 'France' })
+  @Column()
+  country: string;
+
+  @ApiProperty({ example: 'lebonburger@email.com' })
+  @Column({ unique: true })
+  email: string;
+
+  @ApiProperty({ example: 33612345678 })
+  @Column({ unique: true })
+  phone_number: number;
+
+  @ApiProperty({ example: true })
+  @Column()
+  is_open: boolean;
+
+  @ApiProperty() 
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @ApiProperty()
+  @UpdateDateColumn()
+  updatedAt: Date;
   
-    @Column()
-    name: string;
-
-    @Column()
-    description : string;
-
-    @Column()
-    street_number :string;
-
-    @Column()
-    street : string;
-
-    @Column()
-    city : string;
-
-    @Column()
-    postal_code : string;
-
-    @Column()
-    country : string;
-
-    @Column({ unique: true })
-    email: string;
-  
-    @Column({ unique: true })
-    phone_number: number;
-
-    @Column()
-    is_open : boolean;
-  
-    @CreateDateColumn()
-    createdAt: Date;
-  
-    @UpdateDateColumn()
-    updatedAt: Date;
-
     @OneToMany(() => MenuCategory, (menuCategory) => menuCategory.restaurant)
     menuCategories: MenuCategory[];
   }
