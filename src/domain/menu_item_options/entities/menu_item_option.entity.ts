@@ -6,7 +6,7 @@ import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGenerate
 
 @Entity()
 export class MenuItemOption {
-        @ApiProperty({ example: '1' })
+        @ApiProperty({ example: 1 })
         @PrimaryGeneratedColumn()
         id: number;
       
@@ -14,24 +14,24 @@ export class MenuItemOption {
         @Column()
         name: string;
     
-        @ApiProperty({ example: 'True' })
+        @ApiProperty({ example: true })
         @Column()
         is_required : boolean;
 
-        @ApiProperty({ example: 'True' })
+        @ApiProperty({ example: true })
         @Column()
         is_multiple_choice : boolean;
       
         @CreateDateColumn()
-        createdAt: Date;
+        created_at: Date;
       
         @UpdateDateColumn()
-        updatedAt: Date;
+        updated_at: Date;
 
-        @ManyToOne(() => MenuItem, menuItem => menuItem.menuItemOptions)
-        menuItem: MenuItem;
+        @ManyToOne(() => MenuItem, menu_item => menu_item.menu_item_options)
+        menu_item: MenuItem;
 
-        @OneToMany(() => MenuItemOptionValue, (menuItemOptionValue) => menuItemOptionValue.menuItemOption)
-        menuItemOptionValues: MenuItemOptionValue[];
+        @OneToMany(() => MenuItemOptionValue, (menu_item_option_value) => menu_item_option_value.menu_item_option)
+        menu_item_option_values: MenuItemOptionValue[];
 
 }

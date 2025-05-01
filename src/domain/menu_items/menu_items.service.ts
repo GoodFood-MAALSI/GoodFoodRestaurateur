@@ -66,7 +66,7 @@ export class MenuItemsService {
       throw new NotFoundException(`MenuItemId avec l'ID ${menuItemId} non trouvé`);
     }
 
-    return menuItem.menuItemOptions;
+    return menuItem.menu_item_options;
   }
 
   async addMenuItemOptionToMenuItem(menuItemId: number, createMenuItemOptionDto: CreateMenuItemOptionDto): Promise<MenuItemOption> {
@@ -78,7 +78,7 @@ export class MenuItemsService {
 
     const menuItemOption = this.menuItemOptionRepository.create({
       ...createMenuItemOptionDto,
-      menuItem: menuItem,
+      menu_item: menuItem,
     });
 
     return this.menuItemOptionRepository.save(menuItemOption);

@@ -6,32 +6,32 @@ import { ApiBody } from '@nestjs/swagger';
 
 @Controller('restaurant-type')
 export class RestaurantTypeController {
-  constructor(private readonly restaurantTypeService: RestaurantTypeService) {}
+  constructor(private readonly restaurant_type_service: RestaurantTypeService) {}
 
   @Post()
   @ApiBody({ type: CreateRestaurantTypeDto })
-  create(@Body() createRestaurantTypeDto: CreateRestaurantTypeDto) {
-    return this.restaurantTypeService.create(createRestaurantTypeDto);
+  create(@Body() create_restaurant_type_dto: CreateRestaurantTypeDto) {
+    return this.restaurant_type_service.create(create_restaurant_type_dto);
   }
 
   @Get()
   findAll() {
-    return this.restaurantTypeService.findAll();
+    return this.restaurant_type_service.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.restaurantTypeService.findOne(+id);
+    return this.restaurant_type_service.findOne(+id);
   }
 
   @Patch(':id')
   @ApiBody({ type: UpdateRestaurantTypeDto })
   update(@Param('id') id: string, @Body() updateRestaurantTypeDto: UpdateRestaurantTypeDto) {
-    return this.restaurantTypeService.update(+id, updateRestaurantTypeDto);
+    return this.restaurant_type_service.update(+id, updateRestaurantTypeDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.restaurantTypeService.remove(+id);
+    return this.restaurant_type_service.remove(+id);
   }
 }

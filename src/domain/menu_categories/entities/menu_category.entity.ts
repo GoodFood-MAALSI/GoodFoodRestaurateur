@@ -14,14 +14,14 @@ export class MenuCategory {
         name: string;
       
         @CreateDateColumn()
-        createdAt: Date;
+        created_at: Date;
       
         @UpdateDateColumn()
-        updatedAt: Date;
+        updated_at: Date;
 
-        @ManyToOne(() => Restaurant, restaurant => restaurant.menuCategories)
+        @ManyToOne(() => Restaurant, restaurant => restaurant.menu_categories)
         restaurant: Restaurant;
 
-        @OneToMany(() => MenuItem, (menuItem) => menuItem.menuCategory)
-        menuItems: MenuItem[];
+        @OneToMany(() => MenuItem, (menu_item) => menu_item.menu_category)
+        menu_items: MenuItem[];
 }

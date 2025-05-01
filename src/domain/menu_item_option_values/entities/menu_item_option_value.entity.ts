@@ -24,14 +24,14 @@ export class MenuItemOptionValue {
   extra_price: number;
 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 
   @ManyToOne(
     () => MenuItemOption,
-    (menuItemOption) => menuItemOption.menuItemOptionValues,
+    (menu_item_option) => menu_item_option.menu_item_option_values,
   )
-  menuItemOption: MenuItemOption;
+  menu_item_option: MenuItemOption;
 }

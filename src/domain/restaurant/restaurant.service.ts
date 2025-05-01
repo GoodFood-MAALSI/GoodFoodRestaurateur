@@ -3,30 +3,54 @@ import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import { Restaurant } from './entities/restaurant.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
 import { CreateMenuCategoryDto } from '../menu_categories/dto/create-menu_category.dto';
+import { RestaurantFilterDto } from './dto/restaurant-filter.dto';
+import { RestaurantType } from '../restaurant_type/entities/restaurant_type.entity';
+import { CreateRestaurantTypeDto } from '../restaurant_type/dto/create-restaurant_type.dto';
 
 @Injectable()
 export class RestaurantService {
   constructor(
     @InjectRepository(Restaurant)
-    private readonly restaurantRepository: Repository<Restaurant>,
+    private readonly restaurant_repository: Repository<Restaurant>,
     @InjectRepository(MenuCategory)
-    private readonly menuCategoryRepository: Repository<MenuCategory>,
+    private readonly menu_category_repository: Repository<MenuCategory>,
+    @InjectRepository(RestaurantType)
+    private readonly restaurant_type_repository: Repository<RestaurantType>,
   ) {}
 
-  async create(createRestaurantDto: CreateRestaurantDto) {
-    const restaurant = this.restaurantRepository.create(createRestaurantDto)
-    return await this.restaurantRepository.save(restaurant);
+  async create(create_restaurant_dto: CreateRestaurantDto) {
+    const restaurant = this.restaurant_repository.create(create_restaurant_dto)
+    return await this.restaurant_repository.save(restaurant);
   }
 
-  async findAll() {
-    return await this.restaurantRepository.find();
+  async findAll(filters: RestaurantFilterDto): Promise<Restaurant[]> {
+    const where: any = {}; // Objet pour construire la clause WHERE dynamiquement
+
+    if (filters.name) {
+      where.name = ILike(`%${filters.name}%`); // Utiliser ILike pour une recherche insensible à la casse et partielle
+    }
+    if (filters.description) {
+      where.description = ILike(`%${filters.description}%`);
+    }
+    if (filters.is_open !== undefined) {
+      where.is_open = filters.is_open;
+    }
+    if (filters.city) {
+      where.city = ILike(`%${filters.city}%`);
+    }
+    if (filters.country) {
+      where.country = ILike(`%${filters.country}%`);
+    }
+
+    return this.restaurant_repository.find({ where });
   }
+
 
   async findOne(id: number): Promise<Restaurant> {
-    const restaurant = await this.restaurantRepository.findOne({ where: { id } });
+    const restaurant = await this.restaurant_repository.findOne({ where: { id } });
 
     if (!restaurant) {
       throw new NotFoundException(`Restaurant with ID ${id} not found`);
@@ -35,7 +59,7 @@ export class RestaurantService {
     return restaurant;
   }
 
-  async update(id: number, updateRestaurantDto: UpdateRestaurantDto) {
+  async update(id: number, update_restaurant_dto: UpdateRestaurantDto) {
 
     const restaurant = await this.findOne(id);
 
@@ -43,8 +67,8 @@ export class RestaurantService {
       throw new NotFoundException();
     }
 
-    Object.assign(restaurant,updateRestaurantDto);
-    return await this.restaurantRepository.save(restaurant);
+    Object.assign(restaurant,update_restaurant_dto);
+    return await this.restaurant_repository.save(restaurant);
   }
 
   async remove(id: number) {
@@ -53,34 +77,60 @@ export class RestaurantService {
     if(!restaurant){
       throw new NotFoundException();
     }
-    return await this.restaurantRepository.remove(restaurant);
+    return await this.restaurant_repository.remove(restaurant);
   }
 
-  async getMenuCategoriesByRestaurantId(restaurantId: number): Promise<MenuCategory[]> {
-    const restaurant = await this.restaurantRepository.findOne({
-      where: { id: restaurantId },
+  async getMenuCategoriesByRestaurantId(restaurant_id: number): Promise<MenuCategory[]> {
+    const restaurant = await this.restaurant_repository.findOne({
+      where: { id: restaurant_id },
       relations: ['menuCategories'],
     });
 
     if (!restaurant) {
-      throw new NotFoundException(`Restaurant avec l'ID ${restaurantId} non trouvé`);
+      throw new NotFoundException(`Restaurant avec l'ID ${restaurant_id} non trouvé`);
     }
 
-    return restaurant.menuCategories;
+    return restaurant.menu_categories;
   }
 
-  async addMenuCategoryToRestaurant(restaurantId: number, createMenuCategoryDto: CreateMenuCategoryDto): Promise<MenuCategory> {
-    const restaurant = await this.restaurantRepository.findOne({ where: { id: restaurantId } });
+  async addMenuCategoryToRestaurant(restaurant_id: number, create_menu_category_dto: CreateMenuCategoryDto): Promise<MenuCategory> {
+    const restaurant = await this.restaurant_repository.findOne({ where: { id: restaurant_id } });
 
     if (!restaurant) {
-      throw new NotFoundException(`Restaurant avec l'ID ${restaurantId} non trouvé`);
+      throw new NotFoundException(`Restaurant avec l'ID ${restaurant_id} non trouvé`);
     }
 
-    const menuCategory = this.menuCategoryRepository.create({
-      ...createMenuCategoryDto,
+    const menuCategory = this.menu_category_repository.create({
+      ...create_menu_category_dto,
       restaurant: restaurant,
     });
 
-    return this.menuCategoryRepository.save(menuCategory);
+    return this.menu_category_repository.save(menuCategory);
+  }
+
+  async addTypeToRestaurant(restaurant_id: number, create_restaurant_type_dto: CreateRestaurantTypeDto): Promise<RestaurantType> {
+    const restaurant = await this.restaurant_repository.findOne({ where: { id: restaurant_id }, relations: ['restaurant_type'] }); // Récupérer le restaurant avec la relation restaurantType
+
+    if (!restaurant) {
+      throw new NotFoundException(`Restaurant avec l'ID ${restaurant_id} non trouvé`);
+    }
+
+    let restaurantType = await this.restaurant_type_repository.findOne({
+      where: { name: create_restaurant_type_dto.name },
+    });
+
+    if (!restaurantType) {
+      restaurantType = this.restaurant_type_repository.create({
+        name: create_restaurant_type_dto.name,
+      });
+      restaurantType = await this.restaurant_type_repository.save(restaurantType);
+    }
+
+    restaurant.restaurant_type = restaurantType;
+    await this.restaurant_repository.save(restaurant);
+
+    restaurantType.restaurants = [...(restaurantType.restaurants || []), restaurant];
+    await this.restaurant_type_repository.save(restaurantType);
+    return restaurantType;
   }
 }

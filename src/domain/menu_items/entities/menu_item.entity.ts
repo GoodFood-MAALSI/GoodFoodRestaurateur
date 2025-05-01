@@ -39,17 +39,17 @@ import {
 
     @ApiProperty({ example: true })
     @Column()
-    isAvailable : boolean;
+    is_available : boolean;
   
     @CreateDateColumn()
-    createdAt: Date;
+    created_at: Date;
   
     @UpdateDateColumn()
-    updatedAt: Date;
+    updated_at: Date;
 
-    @ManyToOne(() => MenuCategory, menuCategory => menuCategory.menuItems)
-    menuCategory: MenuCategory;
+    @ManyToOne(() => MenuCategory, menu_category => menu_category.menu_items)
+    menu_category: MenuCategory;
 
-    @OneToMany(() => MenuItemOption, (menuItemOption) => menuItemOption.menuItem)
-    menuItemOptions: MenuItemOption[];
+    @OneToMany(() => MenuItemOption, (menu_item_option) => menu_item_option.menu_item)
+    menu_item_options: MenuItemOption[];
   }

@@ -67,7 +67,7 @@ export class MenuCategoriesService {
       throw new NotFoundException(`MenuCategory avec l'ID ${menuCategotyId} non trouvé`);
     }
 
-    return menuCategory.menuItems;
+    return menuCategory.menu_items;
   }
 
   async addMenuItemToMenuCategory(menuCategoryId: number, createMenuItemDto: CreateMenuItemDto): Promise<MenuItem> {
@@ -79,7 +79,7 @@ export class MenuCategoriesService {
 
     const menuItem = this.menuItemRepository.create({
       ...createMenuItemDto,
-      menuCategory: menuCategory,
+      menu_category: menuCategory,
     });
 
     return this.menuItemRepository.save(menuItem);

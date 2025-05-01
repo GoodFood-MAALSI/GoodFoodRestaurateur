@@ -4,10 +4,12 @@ import {
     Column,
     CreateDateColumn,
     Entity,
+    ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
   } from 'typeorm';
+import { RestaurantType } from 'src/domain/restaurant_type/entities/restaurant_type.entity';
   
   @Entity()
   export class Restaurant {
@@ -57,12 +59,15 @@ import {
 
   @ApiProperty() 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty()
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
   
-    @OneToMany(() => MenuCategory, (menuCategory) => menuCategory.restaurant)
-    menuCategories: MenuCategory[];
+  @OneToMany(() => MenuCategory, (menu_category) => menu_category.restaurant)
+  menu_categories: MenuCategory[];
+
+  @ManyToOne(() => RestaurantType, (restaurant_type) => restaurant_type.restaurants)
+  restaurant_type: RestaurantType;
   }
