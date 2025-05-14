@@ -5,9 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MenuCategory } from './entities/menu_category.entity';
 import { Restaurant } from '../restaurant/entities/restaurant.entity';
 import { MenuItem } from '../menu_items/entities/menu_item.entity';
+import { User } from '../users/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MenuCategory]),TypeOrmModule.forFeature([MenuItem])],
+  imports: [TypeOrmModule.forFeature([MenuCategory]),TypeOrmModule.forFeature([MenuItem]),TypeOrmModule.forFeature([User])],
   controllers: [MenuCategoriesController],
   providers: [MenuCategoriesService],
 })
