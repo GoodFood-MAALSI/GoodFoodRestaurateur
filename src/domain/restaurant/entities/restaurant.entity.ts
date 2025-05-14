@@ -10,6 +10,7 @@ import {
     UpdateDateColumn,
   } from 'typeorm';
 import { RestaurantType } from 'src/domain/restaurant_type/entities/restaurant_type.entity';
+import { User } from 'src/domain/users/entities/user.entity';
   
   @Entity()
   export class Restaurant {
@@ -70,4 +71,7 @@ import { RestaurantType } from 'src/domain/restaurant_type/entities/restaurant_t
 
   @ManyToOne(() => RestaurantType, (restaurant_type) => restaurant_type.restaurants)
   restaurant_type: RestaurantType;
+
+  @ManyToOne(() => User, (user) => user.restaurants)
+  user: User;
   }

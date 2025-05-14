@@ -2,9 +2,10 @@ import { Injectable, HttpException, HttpStatus } from "@nestjs/common";
 import { DeepPartial, Repository } from "typeorm";
 import { User } from "./entities/user.entity";
 import { InjectRepository } from "@nestjs/typeorm";
-import { CreateUserDto } from "./dtos/create-user.dto";
+import { CreateUserDto } from "./dto/create-user.dto";
 import { EntityCondition } from "src/domain/utils/types/entity-condition.type";
 import { NullableType } from "src/domain/utils/types/nullable.type";
+import { Restaurant } from "../restaurant/entities/restaurant.entity";
 
 @Injectable()
 export class UsersService {
@@ -44,5 +45,18 @@ export class UsersService {
 
   async saveUser(user: User): Promise<User> {
     return this.usersRepository.save(user);
+  }
+
+    async getRestaurantsByUserId(userId: number): Promise<Restaurant[]> {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ['restaurants'], // Load the 'restaurants' relation
+    });
+
+    if (!user) {
+      throw new HttpException(`User with ID ${userId} not found`, HttpStatus.NOT_FOUND);
+    }
+
+    return user.restaurants;
   }
 }

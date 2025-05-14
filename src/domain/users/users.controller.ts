@@ -1,9 +1,10 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpException, HttpStatus } from "@nestjs/common";
 import { UsersService } from "./users.service";
-import { UpdateUserDto } from "./dtos/update-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 import { User } from "./entities/user.entity";
 import { AuthGuard } from "@nestjs/passport";
+import { Restaurant } from "../restaurant/entities/restaurant.entity";
 
 @ApiTags("Users")
 @Controller("users")
@@ -44,5 +45,18 @@ export class UsersController {
     const user = await this.usersService.findOneUser({ id: +id });
     if (!user) throw new HttpException("User not found", HttpStatus.NOT_FOUND);
     return this.usersService.deleteUser(+id);
+  }
+
+    @Get(":userId/restaurants")
+  @ApiOperation({ summary: "Récupérer les restaurants d'un utilisateur" })
+  @ApiResponse({ status: 200, description: "Restaurants trouvés" })
+  @ApiResponse({ status: 404, description: "Utilisateur non trouvé" })
+  async getRestaurantsByUserId(@Param("userId") userId: string): Promise<Restaurant[]> {
+    try {
+      const restaurants = await this.usersService.getRestaurantsByUserId(+userId);
+      return restaurants;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.NOT_FOUND);
+    }
   }
 }

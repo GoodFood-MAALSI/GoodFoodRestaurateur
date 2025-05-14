@@ -13,6 +13,8 @@ import {
 import { EntityHelper } from "src/domain/utils/entity-helper";
 import { Exclude } from "class-transformer";
 import { hashPassword } from "src/domain/utils/helpers";
+import { Restaurant } from "src/domain/restaurant/entities/restaurant.entity";
+import { ApiProperty } from "@nestjs/swagger";
 
 export enum UserStatus {
   Active = "active",
@@ -23,10 +25,12 @@ export enum UserStatus {
 export class User extends EntityHelper {
   @PrimaryGeneratedColumn()
   id: number;
-
+  
+  @ApiProperty({ example: 'email@gmail.com' })
   @Column({ type: String, unique: true, nullable: true })
   email: string | null;
 
+  @ApiProperty({ example: '123456789' })
   @Column({ nullable: true })
   @Exclude({ toPlainOnly: true })
   password: string;
@@ -47,17 +51,21 @@ export class User extends EntityHelper {
     }
   }
 
+  @ApiProperty({ example: UserStatus.Inactive })
   @Column({ type: "enum", enum: UserStatus, default: UserStatus.Inactive })
   status: UserStatus;
 
+  @ApiProperty({ example: 'Michel' })
   @Index()
   @Column({ type: String, nullable: true })
   first_name: string | null;
 
+  @ApiProperty({ example: 'Bourgeon' })
   @Index()
   @Column({ type: String, nullable: true })
   last_name: string | null;
 
+  @ApiProperty()
   @CreateDateColumn()
   created_at: Date;
 
@@ -66,6 +74,10 @@ export class User extends EntityHelper {
   @Exclude({ toPlainOnly: true })
   hash: string | null;
 
+  @ApiProperty()
   @UpdateDateColumn()
   updated_at: Date;
+
+  @OneToMany(() => Restaurant, (restaurant) => restaurant.user)
+  restaurants: Restaurant[];
 }
