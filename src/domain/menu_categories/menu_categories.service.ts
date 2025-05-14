@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateMenuCategoryDto } from './dto/create-menu_category.dto';
 import { UpdateMenuCategoryDto } from './dto/update-menu_category.dto';
 import { MenuCategory } from './entities/menu_category.entity';
@@ -7,6 +7,9 @@ import { Repository } from 'typeorm';
 import { Restaurant } from '../restaurant/entities/restaurant.entity';
 import { MenuItem } from '../menu_items/entities/menu_item.entity';
 import { CreateMenuItemDto } from '../menu_items/dto/create-menu_item.dto';
+import { User } from '../users/entities/user.entity';
+import { REQUEST } from '@nestjs/core';
+import { Request } from 'express';
 
 @Injectable()
 export class MenuCategoriesService {
@@ -15,10 +18,28 @@ export class MenuCategoriesService {
     private readonly menuCategoryRepository: Repository<MenuCategory>,
     @InjectRepository(MenuItem)
     private readonly menuItemRepository: Repository<MenuItem>,
+    @InjectRepository(User) // Injectez le référentiel User
+    private readonly userRepository: Repository<User>,
+    @Inject(REQUEST) private readonly request: Request,
   ) {}
 
   async create(createMenuCategoryDto: CreateMenuCategoryDto) {
-    const menuCategorie = this.menuCategoryRepository.create(createMenuCategoryDto)
+    // Récupérer l'utilisateur à partir de la requête
+    // const user = this.request.user;
+
+    // if (!user || !user.id) {
+    //   throw new UnauthorizedException(
+    //     'User not authenticated or user ID not found in request',
+    //   );
+    // }
+
+    // // Vérifier si l'utilisateur existe en utilisant le référentiel User
+    // const userExists = await this.checkUserExists(user.id);
+
+    // if (!userExists) {
+    //   throw new NotFoundException(`User with ID ${user.id} not found`);
+    // }
+    const menuCategorie = this.menuCategoryRepository.create(createMenuCategoryDto);
     return await this.menuCategoryRepository.save(menuCategorie);
   }
 

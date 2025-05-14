@@ -49,9 +49,9 @@ import { RestaurantType } from 'src/domain/restaurant_type/entities/restaurant_t
   @Column({ unique: true })
   email: string;
 
-  @ApiProperty({ example: 33612345678 })
+  @ApiProperty({ example: '33612345678' })
   @Column({ unique: true })
-  phone_number: number;
+  phone_number: string;
 
   @ApiProperty({ example: true })
   @Column()

@@ -1,10 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { RestaurantTypeService } from './restaurant_type.service';
 import { CreateRestaurantTypeDto } from './dto/create-restaurant_type.dto';
 import { UpdateRestaurantTypeDto } from './dto/update-restaurant_type.dto';
-import { ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('restaurant-type')
+@UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth()
 export class RestaurantTypeController {
   constructor(private readonly restaurant_type_service: RestaurantTypeService) {}
 

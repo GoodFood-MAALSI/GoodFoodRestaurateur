@@ -42,10 +42,10 @@ export class CreateRestaurantDto {
         @IsNotEmpty()
         email: string;
     
-        @ApiProperty({ example: 33123456789 })
-        @IsNumber()
+        @ApiProperty({ example: '33123456789' })
+        @IsString()
         @IsNotEmpty()
-        phone_number: number;
+        phone_number: string;
 
         @ApiProperty({ example: true })
         @IsBoolean()

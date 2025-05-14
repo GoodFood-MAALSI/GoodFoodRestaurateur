@@ -7,7 +7,7 @@ export class CreateMenuItemOptionValueDto {
         @IsNotEmpty()
         name: string;
 
-        @ApiProperty({ example: 1 })
+        @ApiProperty({ example: 1.75 })
         @IsDecimal()
         @IsNotEmpty()
         extra_price: number;

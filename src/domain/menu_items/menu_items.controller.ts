@@ -1,12 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { MenuItemsService } from './menu_items.service';
 import { CreateMenuItemDto } from './dto/create-menu_item.dto';
 import { UpdateMenuItemDto } from './dto/update-menu_item.dto';
 import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.entity';
 import { CreateMenuItemOptionDto } from '../menu_item_options/dto/create-menu_item_option.dto';
-import { ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('menu-items')
+@UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth()
 export class MenuItemsController {
   constructor(private readonly menuItemsService: MenuItemsService) {}
 

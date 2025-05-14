@@ -1,18 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req} from '@nestjs/common';
 import { RestaurantService } from './restaurant.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
 import { CreateMenuCategoryDto } from '../menu_categories/dto/create-menu_category.dto';
-import { ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { RestaurantFilterDto } from './dto/restaurant-filter.dto';
 import { RestaurantType } from '../restaurant_type/entities/restaurant_type.entity';
 import { CreateRestaurantTypeDto } from '../restaurant_type/dto/create-restaurant_type.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { PaginationService } from './pagination.service';
+import { Request } from 'express';
 
 @Controller('restaurant')
 @ApiTags('Restaurants')
+@UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth()
 export class RestaurantController {
-  constructor(private readonly restaurantService: RestaurantService) {}
+  constructor(private readonly restaurantService: RestaurantService,private readonly paginationService: PaginationService) {}
 
   @Post()
   @ApiBody({ type: CreateRestaurantDto })
@@ -26,8 +31,17 @@ export class RestaurantController {
   @ApiQuery({ name: 'is_open', required: false, type: Boolean, description: 'Filtrer par état d\'ouverture' })
   @ApiQuery({ name: 'city', required: false, type: String, description: 'Filtrer par ville' })
   @ApiQuery({ name: 'country', required: false, type: String, description: 'Filtrer par pays' })
-  findAll(@Query() filters: RestaurantFilterDto) {
-    return this.restaurantService.findAll(filters);
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' }) // Ajout du paramètre page
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Maximum number of items per page' }) // Ajout du paramètre limit
+  async findAll(
+    @Query() filters: RestaurantFilterDto,
+    @Query('page') page = 1, // Valeur par défaut de la page
+    @Query('limit') limit = 10, // Valeur par défaut de la limite
+    @Req() req: Request,
+  )  {
+    const { data, total } = await this.restaurantService.findAll(filters, page, limit);
+    const { links, meta } = this.paginationService.generatePaginationMetadata(req, page, total, limit);
+    return { data, links, meta };
   }
 
   @Get(':id')

@@ -3,7 +3,7 @@ import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import { Restaurant } from './entities/restaurant.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { ILike, Like, Repository } from 'typeorm';
 import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
 import { CreateMenuCategoryDto } from '../menu_categories/dto/create-menu_category.dto';
 import { RestaurantFilterDto } from './dto/restaurant-filter.dto';
@@ -26,26 +26,37 @@ export class RestaurantService {
     return await this.restaurant_repository.save(restaurant);
   }
 
-  async findAll(filters: RestaurantFilterDto): Promise<Restaurant[]> {
-    const where: any = {}; // Objet pour construire la clause WHERE dynamiquement
+  async findAll(
+    filters: RestaurantFilterDto,
+    page: number,
+    limit: number,
+  ): Promise<{ data: Restaurant[]; total: number }> {
+    const offset = (page - 1) * limit;
 
+    const where: any = {}; // Use 'any' to handle optional properties correctly
     if (filters.name) {
-      where.name = ILike(`%${filters.name}%`); // Utiliser ILike pour une recherche insensible à la casse et partielle
+      where.name =  Like(`%${filters.name}%`); // Use LIKE for partial matching
     }
     if (filters.description) {
-      where.description = ILike(`%${filters.description}%`);
+      where.description = Like(`%${filters.description}%`);
     }
     if (filters.is_open !== undefined) {
       where.is_open = filters.is_open;
     }
     if (filters.city) {
-      where.city = ILike(`%${filters.city}%`);
+      where.city = Like(`%${filters.city}%`);
     }
     if (filters.country) {
-      where.country = ILike(`%${filters.country}%`);
+      where.country = Like(`%${filters.country}%`);
     }
 
-    return this.restaurant_repository.find({ where });
+    const [data, total] = await this.restaurant_repository.findAndCount({
+      where,
+      take: limit,
+      skip: offset,
+    });
+
+    return { data, total };
   }
 
 

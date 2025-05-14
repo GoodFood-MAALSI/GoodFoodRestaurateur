@@ -1,12 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { MenuCategoriesService } from './menu_categories.service';
 import { CreateMenuCategoryDto } from './dto/create-menu_category.dto';
 import { UpdateMenuCategoryDto } from './dto/update-menu_category.dto';
 import { MenuItem } from '../menu_items/entities/menu_item.entity';
 import { CreateMenuItemDto } from '../menu_items/dto/create-menu_item.dto';
-import { ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('menu-categories')
+@UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth()
 export class MenuCategoriesController {
   constructor(private readonly menuCategoriesService: MenuCategoriesService) {}
 

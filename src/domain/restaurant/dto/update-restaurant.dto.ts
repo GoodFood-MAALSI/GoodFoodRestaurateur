@@ -36,9 +36,9 @@ export class UpdateRestaurantDto extends PartialType(CreateRestaurantDto) {
     @IsOptional()
     email?: string;
   
-    @ApiProperty({ example: 33456789123, required: false })
+    @ApiProperty({ example: '33456789123', required: false })
     @IsOptional()
-    phone_number?: number;
+    phone_number?: string;
   
     @ApiProperty({ example: false, required: false })
     @IsOptional()
