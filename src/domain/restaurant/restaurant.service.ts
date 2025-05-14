@@ -40,7 +40,7 @@ export class RestaurantService {
     if (filters.description) {
       where.description = Like(`%${filters.description}%`);
     }
-    if (filters.is_open !== undefined) {
+    if (filters.is_open !== undefined && filters.is_open !== null) {
       where.is_open = filters.is_open;
     }
     if (filters.city) {
@@ -120,7 +120,7 @@ export class RestaurantService {
   }
 
   async addTypeToRestaurant(restaurant_id: number, create_restaurant_type_dto: CreateRestaurantTypeDto): Promise<RestaurantType> {
-    const restaurant = await this.restaurant_repository.findOne({ where: { id: restaurant_id }, relations: ['restaurant_type'] }); // Récupérer le restaurant avec la relation restaurantType
+    const restaurant = await this.restaurant_repository.findOne({ where: { id: restaurant_id }, relations: ['restaurant_type'] }); 
 
     if (!restaurant) {
       throw new NotFoundException(`Restaurant avec l'ID ${restaurant_id} non trouvé`);
@@ -143,5 +143,12 @@ export class RestaurantService {
     restaurantType.restaurants = [...(restaurantType.restaurants || []), restaurant];
     await this.restaurant_type_repository.save(restaurantType);
     return restaurantType;
+  }
+
+    async getRestaurantsByUserId(userId: number): Promise<Restaurant[]> {
+    const restaurants = await this.restaurant_repository.find({
+      where: { user: { id: userId } },
+    });
+    return restaurants;
   }
 }

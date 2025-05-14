@@ -82,4 +82,9 @@ export class RestaurantController {
   ): Promise<RestaurantType> {
     return this.restaurantService.addTypeToRestaurant(+id, createRestaurantTypeDto);
   }
+
+    @Get('user/:userId')
+  async getRestaurantsByUserId(@Param('userId') userId: string) {
+      return this.restaurantService.getRestaurantsByUserId(+userId);
+  }
 }
