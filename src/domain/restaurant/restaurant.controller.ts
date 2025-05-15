@@ -26,6 +26,7 @@ export class RestaurantController {
   }
 
   @Get()
+  // @UseGuards(AuthGuard('jwt')) // Retiré pour désactiver la protection sur cette route
   @ApiQuery({ name: 'name', required: false, type: String, description: 'Filtrer par nom' })
   @ApiQuery({ name: 'description', required: false, type: String, description: 'Filtrer par description' })
   @ApiQuery({ name: 'is_open', required: false, type: Boolean, description: 'Filtrer par état d\'ouverture' })
