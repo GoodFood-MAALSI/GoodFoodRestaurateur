@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsOptional, IsBoolean, IsString } from 'class-validator';
 
 export class RestaurantFilterDto {
@@ -12,9 +13,14 @@ export class RestaurantFilterDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Filtrer par état d\'ouverture', example: true })
+@ApiPropertyOptional({ description: "Filtrer par état d'ouverture", example: true, type: Boolean })
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === '1') return true;
+    if (value === 'false' || value === '0') return false;
+    return value;
+  })
   is_open?: boolean;
 
   @ApiPropertyOptional({ description: 'Filtrer par ville', example: 'Paris' })

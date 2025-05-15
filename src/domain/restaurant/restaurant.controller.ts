@@ -14,11 +14,11 @@ import { Request } from 'express';
 
 @Controller('restaurant')
 @ApiTags('Restaurants')
-@UseGuards(AuthGuard('jwt'))
 @ApiBearerAuth()
 export class RestaurantController {
   constructor(private readonly restaurantService: RestaurantService,private readonly paginationService: PaginationService) {}
 
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   @ApiBody({ type: CreateRestaurantDto })
   create(@Body() createRestaurantDto: CreateRestaurantDto) {
@@ -45,27 +45,32 @@ export class RestaurantController {
     return { data, links, meta };
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.restaurantService.findOne(+id);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
   @ApiBody({ type: UpdateRestaurantDto })
   update(@Param('id') id: string, @Body() updateRestaurantDto: UpdateRestaurantDto) {
     return this.restaurantService.update(+id, updateRestaurantDto);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.restaurantService.remove(+id);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Get(':id/categories')
   findCategoriesByRestaurant(@Param('id') id: string): Promise<MenuCategory[]> {
     return this.restaurantService.getMenuCategoriesByRestaurantId(+id);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Post(':id/categories')
   @ApiBody({ type: CreateMenuCategoryDto })
   addCategoryToRestaurant(
@@ -75,6 +80,7 @@ export class RestaurantController {
     return this.restaurantService.addMenuCategoryToRestaurant(+id, createMenuCategoryDto);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Post(':id/restaurant_type')
   @ApiBody({ type: CreateRestaurantTypeDto })
   addTypeToRestaurant(
@@ -84,6 +90,7 @@ export class RestaurantController {
     return this.restaurantService.addTypeToRestaurant(+id, createRestaurantTypeDto);
   }
 
+  @UseGuards(AuthGuard('jwt'))
     @Get('user/:userId')
   async getRestaurantsByUserId(@Param('userId') userId: string) {
       return this.restaurantService.getRestaurantsByUserId(+userId);
