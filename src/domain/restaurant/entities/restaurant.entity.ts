@@ -47,7 +47,6 @@ import { User } from 'src/domain/users/entities/user.entity';
   country: string;
 
   @ApiProperty({ example: 'lebonburger@email.com' })
-  @Column({ unique: true })
   email: string;
 
   @ApiProperty({ example: '33612345678' })
