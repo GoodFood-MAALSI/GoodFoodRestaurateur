@@ -11,7 +11,7 @@ async function bootstrap() {
 
   // Activer CORS avec les bonnes options
   app.enableCors({
-    origin: [process.env.FRONTEND_DOMAIN],
+    origin: '*',
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

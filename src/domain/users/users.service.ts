@@ -6,12 +6,15 @@ import { CreateUserDto } from "./dto/create-user.dto";
 import { EntityCondition } from "src/domain/utils/types/entity-condition.type";
 import { NullableType } from "src/domain/utils/types/nullable.type";
 import { Restaurant } from "../restaurant/entities/restaurant.entity";
+import { Session } from "../session/entities/session.entity";
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(Session)
+    private readonly sessionRepository: Repository<Session>,
   ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
@@ -40,6 +43,11 @@ export class UsersService {
   }
 
   async deleteUser(id: User["id"]): Promise<void> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) throw new HttpException("User not found", HttpStatus.NOT_FOUND);
+
+    // TODO:Ajouter tout les liens au restaurateur
+    await this.sessionRepository.delete({ user: { id } });
     await this.usersRepository.delete(id);
   }
 
