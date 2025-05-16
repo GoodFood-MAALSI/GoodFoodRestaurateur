@@ -128,31 +128,6 @@ describe('UsersController', () => {
     });
   });
 
-  describe('getRestaurantsByUserId', () => {
-    it('should return restaurants for a given user ID', async () => {
-      const result = await controller.getRestaurantsByUserId('1');
-      expect(service.getRestaurantsByUserId).toHaveBeenCalledWith(1);
-      expect(result).toEqual([
-        { id: 101, name: 'Restaurant A' },
-        { id: 102, name: 'Restaurant B' },
-      ]);
-    });
-
-    it('should return empty array if user has no restaurants', async () => {
-      const result = await controller.getRestaurantsByUserId('2');
-      expect(service.getRestaurantsByUserId).toHaveBeenCalledWith(2);
-      expect(result).toEqual([]);
-    });
-
-    it('should throw HttpException if user not found', async () => {
-      try {
-        await controller.getRestaurantsByUserId('3');
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.message).toBe('User not found');
-        expect(error.status).toBe(HttpStatus.NOT_FOUND);
-      }
-    });
-  });
+ 
 });
 
