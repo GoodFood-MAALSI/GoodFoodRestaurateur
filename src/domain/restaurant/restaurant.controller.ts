@@ -2,12 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Re
 import { RestaurantService } from './restaurant.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
-import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
-import { CreateMenuCategoryDto } from '../menu_categories/dto/create-menu_category.dto';
-import { ApiBearerAuth, ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { RestaurantFilterDto } from './dto/restaurant-filter.dto';
-import { RestaurantType } from '../restaurant_type/entities/restaurant_type.entity';
-import { CreateRestaurantTypeDto } from '../restaurant_type/dto/create-restaurant_type.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { PaginationService } from './pagination.service';
@@ -16,7 +12,6 @@ import { ParsedQs } from 'qs';
 
 @Controller('restaurant')
 @ApiTags('Restaurants')
-@UseGuards(AuthGuard('jwt'))
 @ApiBearerAuth()
 export class RestaurantController {
   constructor(
@@ -25,10 +20,15 @@ export class RestaurantController {
   ) {}
 
   @Post()
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: "Créer un restaurant" })
   @ApiBody({ type: CreateRestaurantDto })
-  async create(@Body() createRestaurantDto: CreateRestaurantDto) {
+ async create(@Body() createRestaurantDto: CreateRestaurantDto, @Req() req: Request) {
     try {
+      // Passez l'objet Request complet au service
+      const userId = req.user.id;
       const createdRestaurant = await this.restaurantService.create(createRestaurantDto);
+      this.restaurantService.addUserToRestaurant(createdRestaurant.id,userId)
       return createdRestaurant;
     } catch (error) {
       throw new HttpException(
@@ -49,6 +49,7 @@ export class RestaurantController {
   @ApiQuery({ name: 'country', required: false, type: String, description: 'Filtrer par pays' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Maximum number of items per page' })
+  @ApiOperation({ summary: "Recupérer la liste de tous les restaurants" })
   async findAll(
     @Query() filters: RestaurantFilterDto,
     @Query('page') page = 1, // Valeur par défaut de la page
@@ -71,6 +72,8 @@ export class RestaurantController {
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: "Recupérer un restaurant en fonction de son id" })
   async findOne(@Param('id') id: string) {
     try {
       const restaurant = await this.restaurantService.findOne(+id);
@@ -93,6 +96,8 @@ export class RestaurantController {
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: "Mettre a jour les informations d'un restaurant" })
   @ApiBody({ type: UpdateRestaurantDto })
   async update(@Param('id') id: string, @Body() updateRestaurantDto: UpdateRestaurantDto) {
     try {
@@ -116,6 +121,8 @@ export class RestaurantController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: "Supprimer un restaurant" })
   async remove(@Param('id') id: string) {
     try {
       const result = await this.restaurantService.remove(+id);
@@ -137,61 +144,9 @@ export class RestaurantController {
     }
   }
 
-  @Get(':id/categories')
-  async findCategoriesByRestaurant(@Param('id') id: string): Promise<MenuCategory[]> {
-    try {
-      return await this.restaurantService.getMenuCategoriesByRestaurantId(+id);
-    } catch (error) {
-      throw new HttpException(
-        {
-          message: 'Failed to retrieve categories for restaurant',
-          error: error.message,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  @Post(':id/categories')
-  @ApiBody({ type: CreateMenuCategoryDto })
-  async addCategoryToRestaurant(
-    @Param('id') id: string,
-    @Body() createMenuCategoryDto: CreateMenuCategoryDto,
-  ): Promise<MenuCategory> {
-    try {
-      return await this.restaurantService.addMenuCategoryToRestaurant(+id, createMenuCategoryDto);
-    } catch (error) {
-      throw new HttpException(
-        {
-          message: 'Failed to add category to restaurant',
-          error: error.message,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  @Post(':id/restaurant_type')
-  @ApiBody({ type: CreateRestaurantTypeDto })
-  async addTypeToRestaurant(
-    @Param('id') id: string,
-    @Body() createRestaurantTypeDto: CreateRestaurantTypeDto,
-  ): Promise<RestaurantType> {
-    try {
-      return await this.restaurantService.addTypeToRestaurant(+id, createRestaurantTypeDto);
-    } catch (error) {
-      throw new HttpException(
-        {
-          message: 'Failed to add type to restaurant',
-          error: error.message,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
   @UseGuards(AuthGuard('jwt'))
   @Get('user/:userId')
+  @ApiOperation({ summary: "Recupérer la liste des restaurants du user en fonction de son id" })
   async getRestaurantsByUserId(@Param('userId') userId: string) {
     try {
       return await this.restaurantService.getRestaurantsByUserId(+userId);

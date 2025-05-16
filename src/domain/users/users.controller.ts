@@ -46,17 +46,4 @@ export class UsersController {
     if (!user) throw new HttpException("User not found", HttpStatus.NOT_FOUND);
     return this.usersService.deleteUser(+id);
   }
-
-    @Get(":userId/restaurants")
-  @ApiOperation({ summary: "Récupérer les restaurants d'un utilisateur" })
-  @ApiResponse({ status: 200, description: "Restaurants trouvés" })
-  @ApiResponse({ status: 404, description: "Utilisateur non trouvé" })
-  async getRestaurantsByUserId(@Param("userId") userId: string): Promise<Restaurant[]> {
-    try {
-      const restaurants = await this.usersService.getRestaurantsByUserId(+userId);
-      return restaurants;
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-    }
-  }
 }

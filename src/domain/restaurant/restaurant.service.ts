@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Req, UnauthorizedException } from '@nestjs/common';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import { Restaurant } from './entities/restaurant.entity';
@@ -9,20 +9,19 @@ import { CreateMenuCategoryDto } from '../menu_categories/dto/create-menu_catego
 import { RestaurantFilterDto } from './dto/restaurant-filter.dto';
 import { RestaurantType } from '../restaurant_type/entities/restaurant_type.entity';
 import { CreateRestaurantTypeDto } from '../restaurant_type/dto/create-restaurant_type.dto';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class RestaurantService {
   constructor(
     @InjectRepository(Restaurant)
     private readonly restaurant_repository: Repository<Restaurant>,
-    @InjectRepository(MenuCategory)
-    private readonly menu_category_repository: Repository<MenuCategory>,
-    @InjectRepository(RestaurantType)
-    private readonly restaurant_type_repository: Repository<RestaurantType>,
+    @InjectRepository(User)
+    private readonly user_repository: Repository<User>,
   ) {}
 
   async create(create_restaurant_dto: CreateRestaurantDto) {
-    const restaurant = this.restaurant_repository.create(create_restaurant_dto)
+    const restaurant = this.restaurant_repository.create(create_restaurant_dto);
     return await this.restaurant_repository.save(restaurant);
   }
 
@@ -104,51 +103,37 @@ export class RestaurantService {
     return restaurant.menu_categories;
   }
 
-  async addMenuCategoryToRestaurant(restaurant_id: number, create_menu_category_dto: CreateMenuCategoryDto): Promise<MenuCategory> {
-    const restaurant = await this.restaurant_repository.findOne({ where: { id: restaurant_id } });
-
-    if (!restaurant) {
-      throw new NotFoundException(`Restaurant avec l'ID ${restaurant_id} non trouvé`);
-    }
-
-    const menuCategory = this.menu_category_repository.create({
-      ...create_menu_category_dto,
-      restaurant: restaurant,
-    });
-
-    return this.menu_category_repository.save(menuCategory);
-  }
-
-  async addTypeToRestaurant(restaurant_id: number, create_restaurant_type_dto: CreateRestaurantTypeDto): Promise<RestaurantType> {
-    const restaurant = await this.restaurant_repository.findOne({ where: { id: restaurant_id }, relations: ['restaurant_type'] }); 
-
-    if (!restaurant) {
-      throw new NotFoundException(`Restaurant avec l'ID ${restaurant_id} non trouvé`);
-    }
-
-    let restaurantType = await this.restaurant_type_repository.findOne({
-      where: { name: create_restaurant_type_dto.name },
-    });
-
-    if (!restaurantType) {
-      restaurantType = this.restaurant_type_repository.create({
-        name: create_restaurant_type_dto.name,
-      });
-      restaurantType = await this.restaurant_type_repository.save(restaurantType);
-    }
-
-    restaurant.restaurant_type = restaurantType;
-    await this.restaurant_repository.save(restaurant);
-
-    restaurantType.restaurants = [...(restaurantType.restaurants || []), restaurant];
-    await this.restaurant_type_repository.save(restaurantType);
-    return restaurantType;
-  }
-
     async getRestaurantsByUserId(userId: number): Promise<Restaurant[]> {
     const restaurants = await this.restaurant_repository.find({
       where: { user: { id: userId } },
     });
     return restaurants;
+  }
+
+    async addUserToRestaurant(
+    restaurantId: number,
+    userId: number,
+  ): Promise<Restaurant> {
+    const restaurant = await this.restaurant_repository.findOne({
+      where: { id: restaurantId },
+      relations: ['user'], // Charger la relation avec l'utilisateur
+    });
+
+    if (!restaurant) {
+      throw new NotFoundException(
+        `Restaurant with ID ${restaurantId} not found`,
+      );
+    }
+
+    const user = await this.user_repository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    restaurant.user = user; // Assigner l'utilisateur au restaurant
+    return await this.restaurant_repository.save(restaurant);
   }
 }

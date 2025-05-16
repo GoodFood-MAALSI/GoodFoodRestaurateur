@@ -16,8 +16,12 @@ export class MenuCategoriesService {
   constructor(
     @InjectRepository(MenuCategory)
     private readonly menuCategoryRepository: Repository<MenuCategory>,
+    @InjectRepository(Restaurant)
+    private readonly restaurant_repository: Repository<Restaurant>,
     @InjectRepository(MenuItem)
     private readonly menuItemRepository: Repository<MenuItem>,
+    @InjectRepository(MenuCategory)
+    private readonly menu_category_repository: Repository<MenuCategory>,
     @InjectRepository(User) // Injectez le référentiel User
     private readonly userRepository: Repository<User>,
     @Inject(REQUEST) private readonly request: Request,
@@ -104,5 +108,20 @@ export class MenuCategoriesService {
     });
 
     return this.menuItemRepository.save(menuItem);
+  }
+
+  async addMenuCategoryToRestaurant(restaurant_id: number, create_menu_category_dto: CreateMenuCategoryDto): Promise<MenuCategory> {
+    const restaurant = await this.restaurant_repository.findOne({ where: { id: restaurant_id } });
+
+    if (!restaurant) {
+      throw new NotFoundException(`Restaurant avec l'ID ${restaurant_id} non trouvé`);
+    }
+
+    const menuCategory = this.menu_category_repository.create({
+      ...create_menu_category_dto,
+      restaurant: restaurant,
+    });
+
+    return this.menu_category_repository.save(menuCategory);
   }
 }

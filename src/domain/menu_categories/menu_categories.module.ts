@@ -6,10 +6,11 @@ import { MenuCategory } from './entities/menu_category.entity';
 import { Restaurant } from '../restaurant/entities/restaurant.entity';
 import { MenuItem } from '../menu_items/entities/menu_item.entity';
 import { User } from '../users/entities/user.entity';
+import { RestaurantService } from '../restaurant/restaurant.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MenuCategory]),TypeOrmModule.forFeature([MenuItem]),TypeOrmModule.forFeature([User])],
+  imports: [TypeOrmModule.forFeature([MenuCategory]),TypeOrmModule.forFeature([MenuItem]),TypeOrmModule.forFeature([User]),TypeOrmModule.forFeature([Restaurant])],
   controllers: [MenuCategoriesController],
-  providers: [MenuCategoriesService],
+  providers: [MenuCategoriesService,RestaurantService],
 })
 export class MenuCategoriesModule {}

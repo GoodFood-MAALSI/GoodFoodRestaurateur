@@ -46,17 +46,4 @@ export class UsersService {
   async saveUser(user: User): Promise<User> {
     return this.usersRepository.save(user);
   }
-
-    async getRestaurantsByUserId(userId: number): Promise<Restaurant[]> {
-    const user = await this.usersRepository.findOne({
-      where: { id: userId },
-      relations: ['restaurants'], // Load the 'restaurants' relation
-    });
-
-    if (!user) {
-      throw new HttpException(`User with ID ${userId} not found`, HttpStatus.NOT_FOUND);
-    }
-
-    return user.restaurants;
-  }
 }
