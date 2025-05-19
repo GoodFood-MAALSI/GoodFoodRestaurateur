@@ -50,8 +50,11 @@ import { User } from 'src/domain/users/entities/user.entity';
   email: string;
 
   @ApiProperty({ example: '33612345678' })
-  @Column({ unique: true })
   phone_number: string;
+
+  @ApiProperty({ example: '63201210000012' })
+  @Column({ unique: true })
+  siret: string;
 
   @ApiProperty({ example: true })
   @Column()

@@ -39,6 +39,10 @@ export class UpdateRestaurantDto extends PartialType(CreateRestaurantDto) {
     @ApiProperty({ example: '33456789123', required: false })
     @IsOptional()
     phone_number?: string;
+
+    @ApiProperty({ example: '63201210000012', required: false })
+    @IsOptional()
+    siret: string;
   
     @ApiProperty({ example: false, required: false })
     @IsOptional()

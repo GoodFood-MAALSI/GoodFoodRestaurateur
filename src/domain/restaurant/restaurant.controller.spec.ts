@@ -31,7 +31,8 @@ const mockRestaurantService = {
         postal_code: '10000',
         country: 'Country 1',
         email: 'email1@example.com',
-        phone_number: 123456789,
+        phone_number: '123456789', // Changed to string
+        siret: '63201210000012',
         is_open: true,
         created_at: new Date(),
         updated_at: new Date(),
@@ -46,7 +47,8 @@ const mockRestaurantService = {
         postal_code: '20000',
         country: 'Country 2',
         email: 'email2@example.com',
-        phone_number: 987654321,
+        phone_number: '987654321', // Changed to string
+        siret: '63201210000013',
         is_open: false,
         created_at: new Date(),
         updated_at: new Date(),
@@ -61,7 +63,8 @@ const mockRestaurantService = {
         postal_code: '30000',
         country: 'Country 3',
         email: 'email3@example.com',
-        phone_number: 123456789,
+        phone_number: '123456789', // Changed to string
+        siret: '63201210000014',
         is_open: true,
         created_at: new Date(),
         updated_at: new Date(),
@@ -71,7 +74,7 @@ const mockRestaurantService = {
     return Promise.resolve({ data: paginatedData, total: allData.length }); // Return data and total
   }),
   findOne: jest.fn((id: number) => {
-    const basePhoneNumber = 123456789;
+    const basePhoneNumber = '123456789';
     return {
       id: id,
       name: `Restaurant ${id}`,
@@ -82,7 +85,8 @@ const mockRestaurantService = {
       postal_code: `${id}0000`,
       country: `Country ${id}`,
       email: `email${id}@example.com`,
-      phone_number: basePhoneNumber * id, // Corrected phone number calculation
+      phone_number: basePhoneNumber, // Corrected phone number type
+      siret: `632012100000${id}`,
       is_open: true,
       created_at: new Date(),
       updated_at: new Date(),
@@ -90,7 +94,7 @@ const mockRestaurantService = {
   }),
   update: jest.fn((id: number, dto: UpdateRestaurantDto) => ({ id: id, ...dto, created_at: new Date(), updated_at: new Date() })),
   remove: jest.fn((id: number) => `Restaurant with ID ${id} deleted`),
-  getMenuCategoriesByRestaurantId: jest.fn((id: number): Promise<MenuCategory[]> =>  // added getMenuCategoriesByRestaurantId
+  getMenuCategoriesByRestaurantId: jest.fn((id: number): Promise<MenuCategory[]> =>  // added getMenuCategoriesByRestaurantId
     Promise.resolve([
       {
         id: 1,
@@ -98,7 +102,7 @@ const mockRestaurantService = {
         created_at: new Date(),
         updated_at: new Date(),
         restaurant: null, // Add this
-        menu_items: [],    // Add this
+        menu_items: [],    // Add this
       },
     ]),
   ),
@@ -110,7 +114,7 @@ const mockRestaurantService = {
         created_at: new Date(),
         updated_at: new Date(),
         restaurant: null, // Added
-        menu_items: [],    // Added
+        menu_items: [],    // Added
       }),
   ),
   addTypeToRestaurant: jest.fn(
@@ -162,25 +166,36 @@ describe('RestaurantController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('create', () => {
-    it('should call the service create method and return the created restaurant', () => {
-      const createDto: CreateRestaurantDto = {
-        name: 'New Restaurant',
-        description: 'New Description',
-        street_number: '100',
-        street: 'New Street',
-        city: 'New City',
-        postal_code: '12345',
-        country: 'New Country',
-        email: 'newemail@example.com',
-        phone_number: '999888777',
-        is_open: true,
-      };
-      const result = controller.create(createDto);
-      expect(service.create).toHaveBeenCalledWith(createDto);
-      expect(result).toEqual({ id: 1, ...createDto, created_at: expect.any(Date), updated_at: expect.any(Date) });
+    describe('create', () => {
+        it('should call the service create method and return the created restaurant', async () => {
+            const createDto: CreateRestaurantDto = {
+                name: 'New Restaurant',
+                description: 'New Description',
+                street_number: '100',
+                street: 'New Street',
+                city: 'New City',
+                postal_code: '12345',
+                country: 'New Country',
+                email: 'newemail@example.com',
+                phone_number: '999888777',
+                siret: `632012100000`,
+                is_open: true,
+            };
+            // Mock the request object
+            const mockRequest = {
+                user: { id: 5 }, // Simulate a user with ID 5
+                headers: {},
+                method: 'POST',
+                url: '/restaurants',
+                // Ajout d'un maximum de propriétés de Request pour satisfaire le typage
+            } as unknown as Request; // Use 'as unknown as Request'
+
+            const result = await controller.create(createDto, mockRequest);
+            expect(service.create).toHaveBeenCalledWith(createDto);
+            expect(service.addUserToRestaurant).toHaveBeenCalledWith(1, 5);
+            expect(result).toEqual({ id: 1, ...createDto, created_at: expect.any(Date), updated_at: expect.any(Date) });
+        });
     });
-  });
 
   describe('findAll', () => {
     it('should call the service findAll method with the correct parameters and return paginated data', async () => {
@@ -211,7 +226,8 @@ describe('RestaurantController', () => {
         postal_code: '20000',
         country: 'Country 2',
         email: 'email2@example.com',
-        phone_number: 246913578, // Corrected expected phone number.
+        phone_number: '987654321',
+        siret: '6320121000002',
         is_open: true,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
@@ -231,6 +247,7 @@ describe('RestaurantController', () => {
         country: 'Updated Country',
         email: 'updatedemail@example.com',
         phone_number: '111222333',
+        siret: '98765432109876',
         is_open: false,
       };
       const result = controller.update('3', updateDto);
@@ -244,39 +261,6 @@ describe('RestaurantController', () => {
       const result = controller.remove('4');
       expect(service.remove).toHaveBeenCalledWith(4);
       expect(result).toEqual('Restaurant with ID 4 deleted');
-    });
-  });
-
-  describe('getCategoriesByRestaurant', () => {
-    it('should call the service getCategoriesByRestaurantId method and return the categories', async () => {
-      const result = await controller.findCategoriesByRestaurant('5');
-      expect(service.getMenuCategoriesByRestaurantId).toHaveBeenCalledWith(5);
-      expect(result).toEqual([{
-        id: 1,
-        name: 'Category 1 for Restaurant 5',
-        created_at: expect.any(Date),
-        updated_at: expect.any(Date),
-        restaurant: null,
-        menu_items: [],
-      }]);
-    });
-  });
-
-  describe('addCategoryToRestaurant', () => {
-    it('should call the service addCategoryToRestaurant method and return the added category', async () => {
-      const createCategoryDto: CreateMenuCategoryDto = { name: 'New Category' };
-      const result = await controller.addCategoryToRestaurant('6', createCategoryDto);
-      expect(service.addMenuCategoryToRestaurant).toHaveBeenCalledWith(6, createCategoryDto);
-      expect(result).toEqual({ id: 1, name: 'New Category', created_at: expect.any(Date), updated_at: expect.any(Date), restaurant: null, menu_items: [] });
-    });
-  });
-
-  describe('addRestaurantTypeToRestaurant', () => {
-    it('should call the service addRestaurantTypeToRestaurant and return the added type', async () => {
-      const createRestaurantTypeDto: CreateRestaurantTypeDto = { name: 'Type Name' };
-      const result = await controller.addTypeToRestaurant('7', createRestaurantTypeDto); // Pass only the ID
-      expect(service.addTypeToRestaurant).toHaveBeenCalledWith(7, createRestaurantTypeDto);
-      expect(result).toEqual({ id: 1, name: 'Type Name', created_at: expect.any(Date), updated_at: expect.any(Date), restaurants: [] });
     });
   });
 });

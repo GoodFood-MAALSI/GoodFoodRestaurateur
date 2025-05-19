@@ -47,6 +47,11 @@ export class CreateRestaurantDto {
         @IsNotEmpty()
         phone_number: string;
 
+        @ApiProperty({ example: '63201210000012' })
+        @IsString()
+        @IsNotEmpty()
+        siret: string;
+
         @ApiProperty({ example: true })
         @IsBoolean()
         is_open: boolean;
