@@ -5,7 +5,6 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { EntityCondition } from "src/domain/utils/types/entity-condition.type";
 import { NullableType } from "src/domain/utils/types/nullable.type";
-import { Restaurant } from "../restaurant/entities/restaurant.entity";
 import { Session } from "../session/entities/session.entity";
 
 @Injectable()
@@ -42,13 +41,15 @@ export class UsersService {
     );
   }
 
-  async deleteUser(id: User["id"]): Promise<void> {
+  async deleteUser(id: User["id"]): Promise<{ message: string }> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) throw new HttpException("User not found", HttpStatus.NOT_FOUND);
 
     // TODO:Ajouter tout les liens au restaurateur
     await this.sessionRepository.delete({ user: { id } });
     await this.usersRepository.delete(id);
+
+    return { message: "L'utilisateur a été supprimé avec succès" };
   }
 
   async saveUser(user: User): Promise<User> {

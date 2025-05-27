@@ -8,7 +8,7 @@ import { Session } from '../session/entities/session.entity'; // Importer l'enti
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Restaurant, Session]), // Ajouter Session ici
+    TypeOrmModule.forFeature([User, Restaurant, Session]),
   ],
   controllers: [UsersController],
   providers: [UsersService],
