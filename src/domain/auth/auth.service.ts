@@ -80,6 +80,7 @@ export class AuthService {
     const { token, refreshToken, tokenExpires } = await this.getTokensData({
       id: user.id,
       sessionId: session.id,
+      role: 'restaurateur', // Ajout du rôle
     });
 
     return {
@@ -228,6 +229,7 @@ export class AuthService {
     const { token, refreshToken, tokenExpires } = await this.getTokensData({
       id: session.user.id,
       sessionId: session.id,
+      role: 'restaurateur', // Ajout du rôle
     });
 
     return {
@@ -248,8 +250,9 @@ export class AuthService {
   private async getTokensData(data: {
     id: User["id"];
     sessionId: Session["id"];
+    role: string; // Ajout du rôle
   }) {
-    const tokenExpiresIn = process.env.AUTH_JWT_TOKEN_EXPIRES_IN ;
+    const tokenExpiresIn = process.env.AUTH_JWT_TOKEN_EXPIRES_IN;
     const refreshExpiresIn = process.env.AUTH_REFRESH_TOKEN_EXPIRES_IN;
 
     const tokenExpires = Date.now() + ms(tokenExpiresIn);
@@ -259,6 +262,7 @@ export class AuthService {
         {
           id: data.id,
           sessionId: data.sessionId,
+          role: data.role, // Inclure le rôle dans le token
         },
         {
           secret: process.env.AUTH_JWT_SECRET,
