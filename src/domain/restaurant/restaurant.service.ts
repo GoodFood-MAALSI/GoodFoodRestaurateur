@@ -29,7 +29,7 @@ export class RestaurantService {
     filters: RestaurantFilterDto,
     page: number,
     limit: number,
-  ): Promise<{ data: Restaurant[]; total: number }> {
+  ): Promise<{ restaurants: Restaurant[]; total: number }> {
     const offset = (page - 1) * limit;
 
     const where: any = {}; // Use 'any' to handle optional properties correctly
@@ -49,13 +49,13 @@ export class RestaurantService {
       where.country = Like(`%${filters.country}%`);
     }
 
-    const [data, total] = await this.restaurant_repository.findAndCount({
+    const [restaurants, total] = await this.restaurant_repository.findAndCount({
       where,
       take: limit,
       skip: offset,
     });
 
-    return { data, total };
+    return { restaurants, total };
   }
 
 

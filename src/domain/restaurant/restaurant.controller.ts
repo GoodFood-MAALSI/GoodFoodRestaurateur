@@ -57,9 +57,9 @@ export class RestaurantController {
     @Req() req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
   ) {
     try {
-      const { data, total } = await this.restaurantService.findAll(filters, page, limit);
+      const { restaurants, total } = await this.restaurantService.findAll(filters, page, limit);
       const { links, meta } = this.paginationService.generatePaginationMetadata(req, page, total, limit);
-      return { data, links, meta };
+      return { restaurants, links, meta };
     } catch (error) {
       throw new HttpException(
         {
