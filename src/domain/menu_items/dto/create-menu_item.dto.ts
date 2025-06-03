@@ -10,7 +10,7 @@ export class CreateMenuItemDto {
     name: string;
 
     @ApiProperty({ example: 10.50 })
-    @IsDecimal()
+    @IsNumber()
     @IsNotEmpty()
     price: number;
 
@@ -21,11 +21,10 @@ export class CreateMenuItemDto {
 
     @ApiProperty({ example: 'iVBORw0KGgoAAAANSUhEUgAAAVIAAAF8CAYAAACdczOpAAAACXBIWXMAAAsSAAALEgHS3' })
     @IsBase64()
-    @IsNotEmpty()
     picture: string;
 
     @ApiProperty({ example: 10 })
-    @IsDecimal()
+    @IsNumber()
     @IsNotEmpty()
     promotion: number;
 
