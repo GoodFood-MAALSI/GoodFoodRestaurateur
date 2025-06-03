@@ -30,7 +30,7 @@ export class RestaurantService {
     filters: RestaurantFilterDto,
     page: number,
     limit: number,
-  ): Promise<{ data: Restaurant[]; total: number }> {
+  ): Promise<{ restaurants: Restaurant[]; total: number }> {
     const offset = (page - 1) * limit;
 
     const where: any = {};
@@ -81,7 +81,7 @@ export class RestaurantService {
     const paginatedData = filteredByDistanceRestaurants.slice(offset, offset + limit);
     const total = filteredByDistanceRestaurants.length; // Le total est le nombre après filtrage
 
-    return { data: paginatedData, total };
+    return { restaurants: paginatedData, total };
   }
 
 
