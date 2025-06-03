@@ -3,6 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
     Column,
     CreateDateColumn,
+    Double,
     Entity,
     ManyToOne,
     OneToMany,
@@ -59,6 +60,14 @@ import { User } from 'src/domain/users/entities/user.entity';
   @ApiProperty({ example: true })
   @Column()
   is_open: boolean;
+
+  @ApiProperty({ example: 16.0000 })
+  @Column({ type: 'decimal', precision: 15, scale: 8, default: 0 })
+  long: number;
+
+  @ApiProperty({ example: 16.0000 })
+  @Column({ type: 'decimal', precision: 15, scale: 8, default: 0 })
+  lat: number;
 
   @ApiProperty() 
   @CreateDateColumn()

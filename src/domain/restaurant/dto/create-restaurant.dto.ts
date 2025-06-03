@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsBoolean, IsDecimal, IsNotEmpty, IsNumber, IsString } from "class-validator";
 
 export class CreateRestaurantDto {
         @ApiProperty({ example: 'Le Nouveau Restaurant' })
@@ -51,6 +51,14 @@ export class CreateRestaurantDto {
         @IsString()
         @IsNotEmpty()
         siret: string;
+
+        @ApiProperty({ example: 16.0000 })
+        @IsNumber()
+        long: number;
+
+        @ApiProperty({ example: 16.0000 })
+        @IsNumber()
+        lat: number;
 
         @ApiProperty({ example: true })
         @IsBoolean()

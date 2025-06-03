@@ -32,4 +32,24 @@ export class RestaurantFilterDto {
   @IsOptional()
   @IsString()
   country?: string;
+
+  @ApiPropertyOptional({ description: 'Filtrer par type de restaurant', example: 'Sushi' })
+  @IsOptional()
+  @IsString()
+  resturant_type?: string;
+
+  @ApiPropertyOptional({ description: 'Filtrer par longitude', example: 16.00000 })
+  @IsOptional()
+  @IsString()
+  long?: number;
+
+  @ApiPropertyOptional({ description: 'Filtrer par type de latitude', example: 16.00000 })
+  @IsOptional()
+  @IsString()
+  lat?: number;
+
+  @ApiPropertyOptional({ description: 'Filtrer dans un périmètre en mètre à partir du point long lat ci dessus', example: 16.00000 })
+  @IsOptional()
+  @IsString()
+  perimeter?: number;
 }

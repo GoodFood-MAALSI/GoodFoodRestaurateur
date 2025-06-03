@@ -10,6 +10,7 @@ import { RestaurantFilterDto } from './dto/restaurant-filter.dto';
 import { RestaurantType } from '../restaurant_type/entities/restaurant_type.entity';
 import { CreateRestaurantTypeDto } from '../restaurant_type/dto/create-restaurant_type.dto';
 import { User } from '../users/entities/user.entity';
+import * as geolib from 'geolib';
 
 @Injectable()
 export class RestaurantService {
@@ -25,16 +26,16 @@ export class RestaurantService {
     return await this.restaurant_repository.save(restaurant);
   }
 
-  async findAll(
+ async findAll(
     filters: RestaurantFilterDto,
     page: number,
     limit: number,
   ): Promise<{ data: Restaurant[]; total: number }> {
     const offset = (page - 1) * limit;
 
-    const where: any = {}; // Use 'any' to handle optional properties correctly
+    const where: any = {};
     if (filters.name) {
-      where.name =  Like(`%${filters.name}%`); // Use LIKE for partial matching
+      where.name = Like(`%${filters.name}%`);
     }
     if (filters.description) {
       where.description = Like(`%${filters.description}%`);
@@ -48,14 +49,39 @@ export class RestaurantService {
     if (filters.country) {
       where.country = Like(`%${filters.country}%`);
     }
+    if (filters.resturant_type) {
+      where.restaurant_type = Like(`%${filters.resturant_type}%`);
+    }
 
-    const [data, total] = await this.restaurant_repository.findAndCount({
-      where,
-      take: limit,
-      skip: offset,
-    });
+    // Récupérer tous les restaurants qui correspondent aux autres filtres
+    // sans la pagination et le filtrage de distance pour l'instant.
+    // Cela récupérera potentiellement beaucoup de données.
+    const allMatchingRestaurants = await this.restaurant_repository.find({ where: where });
 
-    return { data, total };
+    let filteredByDistanceRestaurants = allMatchingRestaurants;
+
+    if (filters.lat && filters.long && filters.perimeter) {
+      const centerPoint = { latitude: filters.lat, longitude: filters.long };
+      const perimeterMeters = filters.perimeter; // Assurez-vous que le périmètre est en mètres
+
+      filteredByDistanceRestaurants = allMatchingRestaurants.filter(restaurant => {
+        // Assurez-vous que le restaurant a aussi des coordonnées
+        if (restaurant.lat === undefined || restaurant.long === undefined || restaurant.lat === null || restaurant.long === null) {
+          return false; // Ignorer les restaurants sans coordonnées
+        }
+
+        const restaurantPoint = { latitude: restaurant.lat, longitude: restaurant.long };
+        const distance = geolib.getDistance(centerPoint, restaurantPoint); // Calculer la distance
+        console.log("distance"+distance)
+        return distance <= perimeterMeters; // Filtrer
+      });
+    }
+
+    // Appliquer la pagination APRES le filtrage de distance
+    const paginatedData = filteredByDistanceRestaurants.slice(offset, offset + limit);
+    const total = filteredByDistanceRestaurants.length; // Le total est le nombre après filtrage
+
+    return { data: paginatedData, total };
   }
 
 

@@ -48,6 +48,9 @@ export class RestaurantController {
   @ApiQuery({ name: 'city', required: false, type: String, description: 'Filtrer par ville' })
   @ApiQuery({ name: 'country', required: false, type: String, description: 'Filtrer par pays' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
+  @ApiQuery({ name: 'lat', required: false, type: Number, description: 'latitude point de recherche' })
+  @ApiQuery({ name: 'long', required: false, type: Number, description: 'longitude point de recherche' })
+  @ApiQuery({ name: 'perimeter', required: false, type: Number, description: 'En se basant sur lat et long filtrer sur une zone autour du point en mètre' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Maximum number of items per page' })
   @ApiOperation({ summary: "Recupérer la liste de tous les restaurants" })
   async findAll(
