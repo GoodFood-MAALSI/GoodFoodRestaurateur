@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
 import { ValidationPipe } from '@nestjs/common';
+import { AllExceptionsFilter } from './domain/utils/filters/http-exception.filter';
+import { ResponseInterceptor } from './domain/utils/interceptors/response.interceptor';
 
 dotenv.config(); // Charge le fichier .env en tout début
 
@@ -19,6 +21,10 @@ async function bootstrap() {
 
   // Pipe de validation global
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
+  // Format des réponses/exceptions
+  app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // Swagger configuration
   const config = new DocumentBuilder()

@@ -9,6 +9,7 @@ import { Request } from 'express';
 import { PaginationService } from './pagination.service';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { ParsedQs } from 'qs';
+import { RoleAuthGuardFactory } from '../auth/role-auth.guard';
 
 @Controller('restaurant')
 @ApiTags('Restaurants')
@@ -60,9 +61,9 @@ export class RestaurantController {
     @Req() req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
   ) {
     try {
-      const { data, total } = await this.restaurantService.findAll(filters, page, limit);
+      const { restaurants, total } = await this.restaurantService.findAll(filters, page, limit);
       const { links, meta } = this.paginationService.generatePaginationMetadata(req, page, total, limit);
-      return { data, links, meta };
+      return { restaurants, links, meta };
     } catch (error) {
       throw new HttpException(
         {
@@ -75,7 +76,7 @@ export class RestaurantController {
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(RoleAuthGuardFactory(['restaurateur', 'client']))
   @ApiOperation({ summary: "Recupérer un restaurant en fonction de son id" })
   async findOne(@Param('id') id: string) {
     try {
