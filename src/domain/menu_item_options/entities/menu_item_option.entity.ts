@@ -1,37 +1,49 @@
-
-import { ApiProperty } from "@nestjs/swagger";
-import { MenuItemOptionValue } from "src/domain/menu_item_option_values/entities/menu_item_option_value.entity";
-import { MenuItem } from "src/domain/menu_items/entities/menu_item.entity";
-import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { ApiProperty } from '@nestjs/swagger';
+import { MenuCategory } from 'src/domain/menu_categories/entities/menu_category.entity';
+import { MenuItemOptionValue } from 'src/domain/menu_item_option_values/entities/menu_item_option_value.entity';
+import { MenuItem } from 'src/domain/menu_items/entities/menu_item.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity()
 export class MenuItemOption {
-        @ApiProperty({ example: 1 })
-        @PrimaryGeneratedColumn()
-        id: number;
-      
-        @ApiProperty({ example: 'choix de la boisson' })
-        @Column()
-        name: string;
-    
-        @ApiProperty({ example: true })
-        @Column()
-        is_required : boolean;
+  @ApiProperty({ example: 1 })
+  @PrimaryGeneratedColumn()
+  id: number;
 
-        @ApiProperty({ example: true })
-        @Column()
-        is_multiple_choice : boolean;
-      
-        @CreateDateColumn()
-        created_at: Date;
-      
-        @UpdateDateColumn()
-        updated_at: Date;
+  @Column()
+  name: string;
 
-        @ManyToOne(() => MenuItem, menu_item => menu_item.menu_item_options)
-        menu_item: MenuItem;
+  @Column()
+  is_required: boolean;
 
-        @OneToMany(() => MenuItemOptionValue, (menu_item_option_value) => menu_item_option_value.menu_item_option)
-        menu_item_option_values: MenuItemOptionValue[];
+  @Column()
+  is_multiple_choice: boolean;
 
+  @Column()
+  position: number;
+
+  @Column()
+  menuItemId: number;
+
+  @ManyToOne(() => MenuItem, (menuItem) => menuItem.menuItemOptions)
+  @JoinColumn({ name: 'menuItemId' })
+  menuItem: MenuItem;
+
+  @OneToMany(() => MenuItemOptionValue, (value) => value.menuItemOption)
+  menuItemOptionValues: MenuItemOptionValue[];
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
 }

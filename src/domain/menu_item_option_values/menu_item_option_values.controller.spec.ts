@@ -8,14 +8,9 @@ import { ExecutionContext } from '@nestjs/common';
 
 // Mock du service
 const mockMenuItemOptionValuesService = {
-  create: jest.fn((dto: CreateMenuItemOptionValueDto) => ({ id: '1', ...dto })),
-  findAll: jest.fn(() => [
-    { id: '1', name: 'Option 1', extra_price: 1.5 },
-    { id: '2', name: 'Option 2', extra_price: 2.0 },
-  ]),
-  findOne: jest.fn((id: number) => ({ id: id.toString(), name: `Option ${id}`, extra_price: id * 0.5 })),
-  update: jest.fn((id: number, dto: UpdateMenuItemOptionValueDto) => ({ id: id.toString(), ...dto })),
-  remove: jest.fn((id: number) => `Option with ID ${id} deleted`),
+  create: jest.fn((dto: CreateMenuItemOptionValueDto) => Promise.resolve({ id: 1, ...dto })),
+  update: jest.fn((id: number, dto: UpdateMenuItemOptionValueDto) => Promise.resolve({ id, ...dto })),
+  remove: jest.fn((id: number) => Promise.resolve()),
 };
 
 // Mock du guard d'authentification
@@ -52,48 +47,36 @@ describe('MenuItemOptionValuesController', () => {
   });
 
   describe('create', () => {
-    it('should call the service create method and return the created value', () => {
-      const createDto: CreateMenuItemOptionValueDto = { name: 'New Option', extra_price: 2.5 };
-      const result = controller.create(createDto);
+    it('should call the service create method and return the created value', async () => {
+      const createDto: CreateMenuItemOptionValueDto = {
+        name: 'New Option',
+        extra_price: 2.5,
+        position: 1,
+        menuItemOptionId: 5,
+      };
+      const result = await controller.create(createDto);
       expect(service.create).toHaveBeenCalledWith(createDto);
-      expect(result).toEqual({ id: '1', name: 'New Option', extra_price: 2.5 });
-    });
-  });
-
-  describe('findAll', () => {
-    it('should call the service findAll method and return all values', () => {
-      const result = controller.findAll();
-      expect(service.findAll).toHaveBeenCalled();
-      expect(result).toEqual([
-        { id: '1', name: 'Option 1', extra_price: 1.5 },
-        { id: '2', name: 'Option 2', extra_price: 2.0 },
-      ]);
-    });
-  });
-
-  describe('findOne', () => {
-    it('should call the service findOne method with the id and return the found value', () => {
-      const result = controller.findOne('2');
-      expect(service.findOne).toHaveBeenCalledWith(2);
-      expect(result).toEqual({ id: '2', name: 'Option 2', extra_price: 1 }); // Adjusted extra_price for test
+      expect(result).toEqual({ id: 1, ...createDto });
     });
   });
 
   describe('update', () => {
-    it('should call the service update method with the id and dto, and return the updated value', () => {
-      const updateDto: UpdateMenuItemOptionValueDto = { name: 'Updated Option', extra_price: 3.0 };
-      const result = controller.update('3', updateDto);
+    it('should call the service update method with the id and dto, and return the updated value', async () => {
+      const updateDto: UpdateMenuItemOptionValueDto = {
+        name: 'Updated Option',
+        extra_price: 3.0,
+        position: 2,
+      };
+      const result = await controller.update(3, updateDto);
       expect(service.update).toHaveBeenCalledWith(3, updateDto);
-      expect(result).toEqual({ id: '3', name: 'Updated Option', extra_price: 3.0 });
+      expect(result).toEqual({ id: 3, ...updateDto });
     });
   });
 
   describe('remove', () => {
-    it('should call the service remove method with the id and return the result', () => {
-      const result = controller.remove('4');
+    it('should call the service remove method with the id', async () => {
+      await controller.remove(4);
       expect(service.remove).toHaveBeenCalledWith(4);
-      expect(result).toEqual('Option with ID 4 deleted');
     });
   });
 });
-

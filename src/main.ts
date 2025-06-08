@@ -5,11 +5,14 @@ import * as dotenv from 'dotenv';
 import { ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './domain/utils/filters/http-exception.filter';
 import { ResponseInterceptor } from './domain/utils/interceptors/response.interceptor';
+import { useContainer } from 'class-validator';
 
-dotenv.config(); // Charge le fichier .env en tout début
+dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
   // Activer CORS avec les bonnes options
   app.enableCors({
@@ -20,7 +23,13 @@ async function bootstrap() {
   });
 
   // Pipe de validation global
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidUnknownValues: false,
+    }),
+  );
 
   // Format des réponses/exceptions
   app.useGlobalInterceptors(new ResponseInterceptor());
@@ -31,7 +40,7 @@ async function bootstrap() {
     .setTitle('API Documentation')
     .setDescription("Documentation de l'API NestJS avec Swagger")
     .setVersion('1.0')
-    .addTag("App", "Point d'entrée de l'api")
+    .addTag('App', "Point d'entrée de l'api")
     .addServer(process.env.BACKEND_DOMAIN, 'Local dev')
     .addBearerAuth()
     .build();

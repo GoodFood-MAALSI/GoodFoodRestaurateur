@@ -1,4 +1,4 @@
-#Docker compose si on veux uniquement run l'api avec une bdd
+
 services:
   postgres:
     image: postgres:15

@@ -1,20 +1,20 @@
+import { ApiProperty} from '@nestjs/swagger';
 import { MenuCategory } from 'src/domain/menu_categories/entities/menu_category.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-    Column,
-    CreateDateColumn,
-    Double,
-    Entity,
-    ManyToOne,
-    OneToMany,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
-  } from 'typeorm';
 import { RestaurantType } from 'src/domain/restaurant_type/entities/restaurant_type.entity';
 import { User } from 'src/domain/users/entities/user.entity';
-  
-  @Entity()
-  export class Restaurant {
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+
+@Entity()
+export class Restaurant {
   @ApiProperty({ example: 1 })
   @PrimaryGeneratedColumn()
   id: number;
@@ -23,7 +23,9 @@ import { User } from 'src/domain/users/entities/user.entity';
   @Column()
   name: string;
 
-  @ApiProperty({ example: 'Un restaurant de burgers gourmets avec des ingrédients frais.' })
+  @ApiProperty({
+    example: 'Un restaurant de burgers gourmets avec des ingrédients frais.',
+  })
   @Column()
   description: string;
 
@@ -48,9 +50,11 @@ import { User } from 'src/domain/users/entities/user.entity';
   country: string;
 
   @ApiProperty({ example: 'lebonburger@email.com' })
+  @Column()
   email: string;
 
   @ApiProperty({ example: '33612345678' })
+  @Column()
   phone_number: string;
 
   @ApiProperty({ example: '63201210000012' })
@@ -61,28 +65,36 @@ import { User } from 'src/domain/users/entities/user.entity';
   @Column()
   is_open: boolean;
 
-  @ApiProperty({ example: 16.0000 })
+  @ApiProperty({ example: 16.0 })
   @Column({ type: 'decimal', precision: 15, scale: 8, default: 0 })
   long: number;
 
-  @ApiProperty({ example: 16.0000 })
+  @ApiProperty({ example: 16.0 })
   @Column({ type: 'decimal', precision: 15, scale: 8, default: 0 })
   lat: number;
 
-  @ApiProperty() 
+  @Column()
+  restaurantTypeId: number;
+
+  @Column()
+  userId: number;
+
+  @ApiProperty()
   @CreateDateColumn()
   created_at: Date;
 
   @ApiProperty()
   @UpdateDateColumn()
   updated_at: Date;
-  
-  @OneToMany(() => MenuCategory, (menu_category) => menu_category.restaurant)
-  menu_categories: MenuCategory[];
 
-  @ManyToOne(() => RestaurantType, (restaurant_type) => restaurant_type.restaurants)
-  restaurant_type: RestaurantType;
+  @ManyToOne(() => RestaurantType)
+  @JoinColumn({ name: 'restaurantTypeId' })
+  restaurantType: RestaurantType;
 
-  @ManyToOne(() => User, (user) => user.restaurants)
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'userId' })
   user: User;
-  }
+
+  @OneToMany(() => MenuCategory, (menuCategory) => menuCategory.restaurant)
+  menuCategories: MenuCategory[];
+}

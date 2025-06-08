@@ -24,7 +24,4 @@ import {
   
     @UpdateDateColumn()
     updated_at: Date;
-
-    @OneToMany(() => Restaurant, (restaurant) => restaurant.restaurant_type)
-    restaurants: Restaurant[];
   }

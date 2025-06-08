@@ -1,10 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { Request } from 'express'; // Explicitly import Express Request type
+import { Request } from 'express';
 
-@Injectable()
-export class PaginationService {
-  generatePaginationMetadata(
-    request: Request, // Use express.Request
+export class Pagination {
+  static generatePaginationMetadata(
+    request: Request,
     currentPage: number,
     totalItems: number,
     itemsPerPage: number,

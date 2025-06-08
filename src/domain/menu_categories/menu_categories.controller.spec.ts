@@ -10,13 +10,18 @@ import { ExecutionContext } from '@nestjs/common';
 
 // Mock du service
 const mockMenuCategoriesService = {
-  create: jest.fn((dto: CreateMenuCategoryDto) => ({ id: 1, ...dto, created_at: new Date(), updated_at: new Date() })),
-  findAll: jest.fn(() => [
-    { id: 1, name: 'Category 1', created_at: new Date(), updated_at: new Date() },
-    { id: 2, name: 'Category 2', created_at: new Date(), updated_at: new Date() },
-  ]),
-  findOne: jest.fn((id: number) => ({ id: id, name: `Category ${id}`, created_at: new Date(), updated_at: new Date() })),
-  update: jest.fn((id: number, dto: UpdateMenuCategoryDto) => ({ id: id, ...dto, created_at: new Date(), updated_at: new Date() })),
+  create: jest.fn((dto: CreateMenuCategoryDto) => ({
+    id: 1,
+    ...dto,
+    created_at: new Date(),
+    updated_at: new Date(),
+  })),
+  update: jest.fn((id: number, dto: UpdateMenuCategoryDto) => ({
+    id,
+    ...dto,
+    created_at: new Date(),
+    updated_at: new Date(),
+  })),
   remove: jest.fn((id: number) => `Category with ID ${id} deleted`),
   getMenuItemsByMenuCategoryId: jest.fn((id: number): Promise<MenuItem[]> =>
     Promise.resolve([
@@ -27,12 +32,14 @@ const mockMenuCategoriesService = {
         description: 'Description 1',
         picture: 'base64_image_1',
         promotion: 0,
+        position: 1,
         isAvailable: true,
+        is_available: true,
         created_at: new Date(),
         updated_at: new Date(),
-        is_available: true,  // Added
-        menu_category: null, // Added
-        menu_item_options: [], // Added
+        menuCategoryId: id,
+        menuCategory: null,
+        menuItemOptions: [],
       },
     ]),
   ),
@@ -41,11 +48,14 @@ const mockMenuCategoriesService = {
       Promise.resolve({
         id: 1,
         ...dto,
+        position: 1,
+        picture: '', // 🔧 Rendu obligatoire ici
+        menuCategoryId: id,
+        is_available: true,
         created_at: new Date(),
         updated_at: new Date(),
-        is_available: true, // Added
-        menu_category: null, // Added
-        menu_item_options: [], // Added
+        menuCategory: null,
+        menuItemOptions: [],
       }),
   ),
 };
@@ -85,86 +95,43 @@ describe('MenuCategoriesController', () => {
 
   describe('create', () => {
     it('should call the service create method and return the created category', () => {
-      const createDto: CreateMenuCategoryDto = { name: 'New Category' };
+      const createDto: CreateMenuCategoryDto = {
+        name: 'New Category',
+        position: 1,
+        restaurantId: 42,
+      };
       const result = controller.create(createDto);
       expect(service.create).toHaveBeenCalledWith(createDto);
-      expect(result).toEqual({ id: 1, name: 'New Category', created_at: expect.any(Date), updated_at: expect.any(Date) });
-    });
-  });
-
-  describe('findAll', () => {
-    it('should call the service findAll method and return all categories', () => {
-      const result = controller.findAll();
-      expect(service.findAll).toHaveBeenCalled();
-      expect(result).toEqual([
-        { id: 1, name: 'Category 1', created_at: expect.any(Date), updated_at: expect.any(Date) },
-        { id: 2, name: 'Category 2', created_at: expect.any(Date), updated_at: expect.any(Date) },
-      ]);
-    });
-  });
-
-  describe('findOne', () => {
-    it('should call the service findOne method with the id and return the found category', () => {
-      const result = controller.findOne('2');
-      expect(service.findOne).toHaveBeenCalledWith(2);
-      expect(result).toEqual({ id: 2, name: 'Category 2', created_at: expect.any(Date), updated_at: expect.any(Date) });
+      expect(result).toEqual({
+        id: 1,
+        name: 'New Category',
+        position: 1,
+        restaurantId: 42,
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      });
     });
   });
 
   describe('update', () => {
     it('should call the service update method with the id and dto, and return the updated category', () => {
       const updateDto: UpdateMenuCategoryDto = { name: 'Updated Category' };
-      const result = controller.update('3', updateDto);
+      const result = controller.update(3, updateDto);
       expect(service.update).toHaveBeenCalledWith(3, updateDto);
-      expect(result).toEqual({ id: 3, name: 'Updated Category', created_at: expect.any(Date), updated_at: expect.any(Date) });
+      expect(result).toEqual({
+        id: 3,
+        name: 'Updated Category',
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      });
     });
   });
 
   describe('remove', () => {
     it('should call the service remove method with the id and return the result', () => {
-      const result = controller.remove('4');
+      const result = controller.remove(4);
       expect(service.remove).toHaveBeenCalledWith(4);
       expect(result).toEqual('Category with ID 4 deleted');
     });
   });
-
-  describe('findItemsByCategories', () => {
-    it('should call the service getMenuItemsByMenuCategoryId method and return the items', async () => {
-      const result = await controller.findItemsByCategories('5');
-      expect(service.getMenuItemsByMenuCategoryId).toHaveBeenCalledWith(5);
-      expect(result).toEqual([
-        {
-          id: 1,
-          name: 'Item 1 in Category 5',
-          price: 10.99,
-          description: 'Description 1',
-          picture: 'base64_image_1',
-          promotion: 0,
-          isAvailable: true,
-          created_at: expect.any(Date),
-          updated_at: expect.any(Date),
-          is_available: true,
-          menu_category: null,
-          menu_item_options: [],
-        },
-      ]);
-    });
-  });
-
-  describe('addItemToCategory', () => {
-    it('should call the service addMenuItemToMenuCategory method and return the added item', async () => {
-      const createItemDto: CreateMenuItemDto = {
-        name: 'New Item',
-        price: 12.50,
-        description: 'New Item Description',
-        picture: 'new_image',
-        promotion: 5,
-        isAvailable: true,
-      };
-      const result = await controller.addItemToCategory('6', createItemDto);
-      expect(service.addMenuItemToMenuCategory).toHaveBeenCalledWith(6, createItemDto);
-      expect(result).toEqual({ id: 1, ...createItemDto, created_at: expect.any(Date), updated_at: expect.any(Date), is_available: true, menu_category: null, menu_item_options: [] });
-    });
-  });
 });
-

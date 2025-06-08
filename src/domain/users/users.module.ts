@@ -4,7 +4,7 @@ import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { Restaurant } from '../restaurant/entities/restaurant.entity';
-import { Session } from '../session/entities/session.entity'; // Importer l'entité Session
+import { Session } from '../session/entities/session.entity';
 
 @Module({
   imports: [

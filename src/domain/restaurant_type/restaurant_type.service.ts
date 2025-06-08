@@ -48,30 +48,4 @@ export class RestaurantTypeService {
      }
      return await this.restaurantTypeRepository.remove(restaurantType);
    }
-
-  async addTypeToRestaurant(restaurant_id: number, create_restaurant_type_dto: CreateRestaurantTypeDto): Promise<RestaurantType> {
-    const restaurant = await this.restaurant_repository.findOne({ where: { id: restaurant_id }, relations: ['restaurant_type'] }); 
-
-    if (!restaurant) {
-      throw new NotFoundException(`Restaurant avec l'ID ${restaurant_id} non trouvé`);
-    }
-
-    let restaurantType = await this.restaurantTypeRepository.findOne({
-      where: { name: create_restaurant_type_dto.name },
-    });
-
-    if (!restaurantType) {
-      restaurantType = this.restaurantTypeRepository.create({
-        name: create_restaurant_type_dto.name,
-      });
-      restaurantType = await this.restaurantTypeRepository.save(restaurantType);
-    }
-
-    restaurant.restaurant_type = restaurantType;
-    await this.restaurant_repository.save(restaurant);
-
-    restaurantType.restaurants = [...(restaurantType.restaurants || []), restaurant];
-    await this.restaurantTypeRepository.save(restaurantType);
-    return restaurantType;
-  }
 }
