@@ -13,10 +13,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
+  const allowedOrigins = ['http://localhost:4002', 'http://localhost:8080'];
 
   // Activer CORS avec les bonnes options
   app.enableCors({
-    origin: '*',
+    origin: allowedOrigins,
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
