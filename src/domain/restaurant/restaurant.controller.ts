@@ -206,7 +206,7 @@ export class RestaurantController {
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
+  // @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Recupérer un restaurant en fonction de son id' })
   async findOne(@Param('id') id: string) {
     try {
