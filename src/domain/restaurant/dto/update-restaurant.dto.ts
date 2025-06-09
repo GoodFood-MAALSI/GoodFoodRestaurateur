@@ -1,11 +1,9 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateRestaurantDto } from './create-restaurant.dto';
 import { IsNumber, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEntityExists } from 'src/domain/utils/validators/is-entity-exists.validator';
 import { RestaurantType } from 'src/domain/restaurant_type/entities/restaurant_type.entity';
 
-export class UpdateRestaurantDto extends PartialType(CreateRestaurantDto) {
+export class UpdateRestaurantDto {
   @ApiProperty({ example: 'Le Restaurant Renommé', required: false })
   @IsOptional()
   name?: string;

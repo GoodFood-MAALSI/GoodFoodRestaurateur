@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -36,27 +37,26 @@ export class RestaurantService {
   ) {}
 
   async create(createRestaurantDto: CreateRestaurantDto & { userId: number }) {
-  const { restaurantTypeId, userId, ...restaurantData } = createRestaurantDto;
+    const { restaurantTypeId, userId, ...restaurantData } = createRestaurantDto;
 
-  const restaurantTypeExists = await this.restaurant_type.existsBy({
-    id: restaurantTypeId,
-  });
+    const restaurantTypeExists = await this.restaurant_type.existsBy({
+      id: restaurantTypeId,
+    });
 
-  if (!restaurantTypeExists) {
-    throw new NotFoundException(
-      `RestaurantType avec l'ID ${restaurantTypeId} non trouvé`,
-    );
+    if (!restaurantTypeExists) {
+      throw new NotFoundException(
+        `RestaurantType avec l'ID ${restaurantTypeId} non trouvé`,
+      );
+    }
+
+    const restaurant = this.restaurant_repository.create({
+      ...restaurantData,
+      restaurantTypeId,
+      userId,
+    });
+
+    return await this.restaurant_repository.save(restaurant);
   }
-
-  const restaurant = this.restaurant_repository.create({
-    ...restaurantData,
-    restaurantTypeId,
-    userId,
-  });
-
-  return await this.restaurant_repository.save(restaurant);
-}
-
 
   async findAll(
     filters: RestaurantFilterDto,
@@ -142,14 +142,25 @@ export class RestaurantService {
     return restaurant;
   }
 
-  async update(id: number, update_restaurant_dto: UpdateRestaurantDto) {
+  async update(id: number, updateDto: UpdateRestaurantDto) {
     const restaurant = await this.findOne(id);
-
     if (!restaurant) {
-      throw new NotFoundException();
+      throw new NotFoundException(`Restaurant with ID ${id} not found`);
     }
 
-    Object.assign(restaurant, update_restaurant_dto);
+    if (updateDto.siret && updateDto.siret !== restaurant.siret) {
+      const existing = await this.restaurant_repository.findOne({
+        where: { siret: updateDto.siret },
+      });
+
+      if (existing) {
+        throw new ConflictException(
+          `Le numéro SIRET ${updateDto.siret} est déjà utilisé`,
+        );
+      }
+    }
+
+    Object.assign(restaurant, updateDto);
     return await this.restaurant_repository.save(restaurant);
   }
 
