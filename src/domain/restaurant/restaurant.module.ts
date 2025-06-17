@@ -13,10 +13,11 @@ import { IsSiretUniqueConstraint } from './validators/is-siret-unique.validator'
 import { MenuItem } from '../menu_items/entities/menu_item.entity';
 import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.entity';
 import { MenuItemOptionValue } from '../menu_item_option_values/entities/menu_item_option_value.entity';
+import { ClientReviewRestaurant } from '../client-review-restaurant/entities/client-review-restaurant.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Restaurant, MenuCategory, RestaurantType, User, MenuItem, MenuItemOption, MenuItemOptionValue]),
+    TypeOrmModule.forFeature([Restaurant, MenuCategory, RestaurantType, User, MenuItem, MenuItemOption, MenuItemOptionValue, ClientReviewRestaurant]),
     UsersModule,
     HttpModule,
   ],

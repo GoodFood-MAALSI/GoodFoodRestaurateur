@@ -15,6 +15,7 @@ import { MailerModule } from './domain/mailer/mailer.module';
 import { MailsModule } from './domain/mails/mails.module';
 import { ForgotPasswordModule } from './domain/forgot-password/forgot-password.module';
 import { UsersModule } from './domain/users/users.module';
+import { ClientReviewRestaurantModule } from './domain/client-review-restaurant/client-review-restaurant.module';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { UsersModule } from './domain/users/users.module';
     MenuItemsModule,
     MenuCategoriesModule,
     MenuItemOptionsModule,
-    MenuItemOptionValuesModule
+    MenuItemOptionValuesModule,
+    ClientReviewRestaurantModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -18,6 +18,7 @@ import * as geolib from 'geolib';
 import { MenuItem } from '../menu_items/entities/menu_item.entity';
 import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.entity';
 import { MenuItemOptionValue } from '../menu_item_option_values/entities/menu_item_option_value.entity';
+import { ClientReviewRestaurant } from '../client-review-restaurant/entities/client-review-restaurant.entity';
 
 @Injectable()
 export class RestaurantService {
@@ -34,6 +35,8 @@ export class RestaurantService {
     private readonly menuItemOptionRepository: Repository<MenuItemOption>,
     @InjectRepository(MenuItemOptionValue)
     private readonly menuItemOptionValueRepository: Repository<MenuItemOptionValue>,
+    @InjectRepository(ClientReviewRestaurant)
+    private readonly clientReviewRestaurantRepository: Repository<ClientReviewRestaurant>,
   ) {}
 
   async create(createRestaurantDto: CreateRestaurantDto & { userId: number }) {
@@ -87,11 +90,35 @@ export class RestaurantService {
         relations: ['restaurantType'],
       });
 
-      let filteredRestaurants = allRestaurants;
+      // Fetch review stats for all restaurants in one query
+      const reviewStats = await this.clientReviewRestaurantRepository
+        .createQueryBuilder('review')
+        .select('review.restaurantId', 'restaurantId')
+        .addSelect('COUNT(review.id)', 'review_count')
+        .addSelect('AVG(review.rating)', 'average_rating')
+        .where('review.restaurantId IN (:...ids)', {
+          ids: allRestaurants.map((r) => r.id),
+        })
+        .groupBy('review.restaurantId')
+        .getRawMany();
+
+      // Map review stats to restaurants
+      const restaurantsWithStats = allRestaurants.map((restaurant) => {
+        const stats = reviewStats.find(
+          (s) => s.restaurantId === restaurant.id,
+        );
+        restaurant.review_count = stats ? parseInt(stats.review_count) : 0;
+        restaurant.average_rating = stats
+          ? parseFloat(parseFloat(stats.average_rating).toFixed(2))
+          : 0;
+        return restaurant;
+      });
+
+      let filteredRestaurants = restaurantsWithStats;
       if (filters.lat && filters.long && filters.perimeter) {
         const center = { latitude: filters.lat, longitude: filters.long };
 
-        filteredRestaurants = allRestaurants.filter((restaurant) => {
+        filteredRestaurants = restaurantsWithStats.filter((restaurant) => {
           if (restaurant.lat == null || restaurant.long == null) return false;
 
           const distance = geolib.getDistance(center, {
@@ -138,6 +165,19 @@ export class RestaurantService {
     if (!restaurant) {
       throw new NotFoundException(`Restaurant avec l'ID ${id} non trouvé`);
     }
+
+    // Fetch review stats
+    const reviewStats = await this.clientReviewRestaurantRepository
+      .createQueryBuilder('review')
+      .select('COUNT(review.id)', 'review_count')
+      .addSelect('AVG(review.rating)', 'average_rating')
+      .where('review.restaurantId = :id', { id })
+      .getRawOne();
+
+    restaurant.review_count = reviewStats ? parseInt(reviewStats.review_count) : 0;
+    restaurant.average_rating = reviewStats
+      ? parseFloat(parseFloat(reviewStats.average_rating).toFixed(2))
+      : 0;
 
     return restaurant;
   }
@@ -193,18 +233,18 @@ export class RestaurantService {
         }
 
         await this.menuItemOptionRepository.delete({
-          menuItemId: menuItem.id,
-        });
+          menuItemId: menuItem.id },
+        );
       }
 
       await this.menuItemRepository.delete({
-        menuCategoryId: menuCategory.id,
-      });
+        menuCategoryId: menuCategory.id },
+      );
     }
 
     await this.menuCategoryRepository.delete({
-      restaurantId: id,
-    });
+      restaurantId: id },
+    );
 
     await this.restaurant_repository.remove(restaurant);
   }
@@ -222,6 +262,30 @@ export class RestaurantService {
       order: { created_at: 'DESC' },
     });
 
-    return { restaurants, total };
+    // Fetch review stats for all restaurants in one query
+    const reviewStats = await this.clientReviewRestaurantRepository
+      .createQueryBuilder('review')
+      .select('review.restaurantId', 'restaurantId')
+      .addSelect('COUNT(review.id)', 'review_count')
+      .addSelect('AVG(review.rating)', 'average_rating')
+      .where('review.restaurantId IN (:...ids)', {
+        ids: restaurants.map((r) => r.id),
+      })
+      .groupBy('review.restaurantId')
+      .getRawMany();
+
+    // Map review stats to restaurants
+    const restaurantsWithStats = restaurants.map((restaurant) => {
+      const stats = reviewStats.find(
+        (s) => s.restaurantId === restaurant.id,
+      );
+      restaurant.review_count = stats ? parseInt(stats.review_count) : 0;
+      restaurant.average_rating = stats
+        ? parseFloat(parseFloat(stats.average_rating).toFixed(2))
+        : 0;
+      return restaurant;
+    });
+
+    return { restaurants: restaurantsWithStats, total };
   }
 }

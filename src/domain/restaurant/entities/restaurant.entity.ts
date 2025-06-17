@@ -1,7 +1,8 @@
-import { ApiProperty} from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { MenuCategory } from 'src/domain/menu_categories/entities/menu_category.entity';
 import { RestaurantType } from 'src/domain/restaurant_type/entities/restaurant_type.entity';
 import { User } from 'src/domain/users/entities/user.entity';
+import { ClientReviewRestaurant } from 'src/domain/client-review-restaurant/entities/client-review-restaurant.entity';
 import {
   Column,
   CreateDateColumn,
@@ -97,4 +98,13 @@ export class Restaurant {
 
   @OneToMany(() => MenuCategory, (menuCategory) => menuCategory.restaurant)
   menuCategories: MenuCategory[];
+
+  @OneToMany(() => ClientReviewRestaurant, (review) => review.restaurant)
+  reviews: ClientReviewRestaurant[];
+
+  @ApiProperty({ example: 10, description: 'Nombre total d\'avis' })
+  review_count?: number;
+
+  @ApiProperty({ example: 4.5, description: 'Note moyenne sur 5' })
+  average_rating?: number;
 }

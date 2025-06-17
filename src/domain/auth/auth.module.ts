@@ -10,7 +10,6 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { AnonymousStrategy } from './strategies/anonymous.strategy';
 import { MailsModule } from 'src/domain/mails/mails.module';
 import { ForgotPasswordModule } from 'src/domain/forgot-password/forgot-password.module';
-import { UsersService } from '../users/users.service';
 import { HttpModule } from '@nestjs/axios';
 
 @Module({
@@ -28,7 +27,7 @@ import { HttpModule } from '@nestjs/axios';
     AuthService,
     JwtRefreshStrategy,
     JwtStrategy,
-    AnonymousStrategy,
+    AnonymousStrategy
   ],
   exports: [
     AuthService,
