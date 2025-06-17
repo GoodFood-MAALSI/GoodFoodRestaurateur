@@ -8,6 +8,7 @@ import { MenuCategorySeeder } from './seeders/menu_categories.seeder';
 import { MenuItemSeeder } from './seeders/menu_items.seeder';
 import { MenuItemOptionSeeder } from './seeders/menu_item_options.seeder';
 import { MenuItemOptionValueSeeder } from './seeders/menu_item_option_values.seeder';
+import { ClientReviewRestaurantSeeder } from './seeders/client-review-restaurant.seeder';
 
 async function seed() {
   try {
@@ -20,7 +21,8 @@ async function seed() {
         MenuCategorySeeder,
         MenuItemSeeder,
         MenuItemOptionSeeder,
-        MenuItemOptionValueSeeder
+        MenuItemOptionValueSeeder,
+        ClientReviewRestaurantSeeder
       ],
     });
     await AppDataSource.destroy();
