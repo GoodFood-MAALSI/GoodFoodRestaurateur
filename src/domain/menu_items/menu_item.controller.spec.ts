@@ -108,9 +108,8 @@ describe('MenuItemsController', () => {
         name: 'New Item',
         price: 15.99,
         description: 'New Description',
-        picture: 'new_base64_image',
         promotion: 20,
-        isAvailable: false,
+        is_available: false,
       };
       const result = controller.create(createDto);
       expect(service.create).toHaveBeenCalledWith(createDto);
@@ -163,7 +162,7 @@ describe('MenuItemsController', () => {
 
   describe('update', () => {
     it('should call the service update method with the id and dto, and return the updated item', () => {
-      const updateDto: UpdateMenuItemDto = { name: 'Updated Item', price: 19.99, description: 'Updated Description', picture: 'updated_base64_image', promotion: 25, isAvailable: false };
+      const updateDto: UpdateMenuItemDto = { name: 'Updated Item', price: 19.99, description: 'Updated Description', promotion: 25, is_available: false };
       const result = controller.update('3', updateDto);
       expect(service.update).toHaveBeenCalledWith(3, updateDto);
       expect(result).toEqual({ id: '3', ...updateDto });

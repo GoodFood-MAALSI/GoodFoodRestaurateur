@@ -15,10 +15,6 @@ export class UpdateMenuItemDto extends PartialType(CreateMenuItemDto) {
         @ApiProperty({ example: 10.50, required: false  })
         @IsOptional()
         price?: number;
-      
-        @ApiProperty({ example: 'iVBORw0KGgoAAAANSUhEUgAAAVIAAAF8CAYAAACdczOpAAAACXBIWXMAAAsSAAALEgHS3', required: false  })
-        @IsOptional()
-        picture?: string;
 
         @ApiProperty({ example: 10, required: false  })
         @IsOptional()
@@ -26,5 +22,5 @@ export class UpdateMenuItemDto extends PartialType(CreateMenuItemDto) {
 
         @ApiProperty({ example: true, required: false  })
         @IsOptional()
-        isAvailable?: boolean;
+        is_available?: boolean;
 }

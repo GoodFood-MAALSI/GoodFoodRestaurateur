@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Images } from 'src/domain/images/entities/images.entity';
 import { MenuCategory } from 'src/domain/menu_categories/entities/menu_category.entity';
 import { MenuItemOption } from 'src/domain/menu_item_options/entities/menu_item_option.entity';
 import {
@@ -29,10 +30,6 @@ import {
     @Column()
     description: string;
 
-    @ApiProperty({ example: 'iVBORw0KGgoAAAANSUhEUgAAAVIAAAF8CAYAAACdczOpAAAACXBIWXMAAAsSAAALEgHS3'})
-    @Column()
-    picture: string;
-
     @ApiProperty({ example: 10 })
     @Column({type: "decimal", precision: 10, scale: 2, default: 0})
     promotion : number;
@@ -52,4 +49,7 @@ import {
 
     @OneToMany(() => MenuItemOption, (menu_item_option) => menu_item_option.menu_item)
     menu_item_options: MenuItemOption[];
+
+    @OneToMany(() => Images, image => image.menu_item) // Le second argument doit être la propriété relationnelle dans Images
+    images: Images[]; // La liste des images associées à ce MenuItem
   }

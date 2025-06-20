@@ -1,14 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req, HttpException, HttpStatus, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator } from '@nestjs/common';
 import { RestaurantService } from './restaurant.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { RestaurantFilterDto } from './dto/restaurant-filter.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { PaginationService } from './pagination.service';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { ParsedQs } from 'qs';
+import { FileInterceptor } from '@nestjs/platform-express/multer';
+import { multerConfig } from 'multer.config';
+import { Restaurant } from './entities/restaurant.entity';
 
 @Controller('restaurant')
 @ApiTags('Restaurants')
@@ -163,5 +166,61 @@ export class RestaurantController {
       );
     }
   }
+
+  @Post(':id/upload-image')
+  @ApiOperation({ summary: 'Uploader une image pour un restaurant spécifique' }) // Description pour Swagger
+  @ApiParam({ name: 'id', description: 'ID du restaurant', type: Number }) // Description du paramètre d'URL
+  @ApiConsumes('multipart/form-data') // Indique que le type de contenu est multipart/form-data
+  @ApiBody({ // Décrit le corps de la requête pour l'upload de fichier
+    schema: {
+      type: 'object',
+      properties: {
+        image: { // 'image' doit correspondre au nom du champ dans FileInterceptor
+          type: 'string',
+          format: 'binary', // Indique à Swagger qu'il s'agit d'un fichier binaire
+          description: 'Fichier image à uploader (JPEG, PNG, GIF, max 5MB)',
+        },
+        // Vous pouvez ajouter d'autres champs de formulaire si nécessaire, par exemple:
+        // isMain: { type: 'boolean', description: 'Définir comme image principale' }
+      },
+      required: ['image'], // Indique que le champ 'image' est obligatoire
+    },
+  })
+  @UseInterceptors(FileInterceptor('image', multerConfig)) // 'image' doit correspondre au nom du champ dans ApiBody
+  async uploadRestaurantImage(
+    @Param('id') restaurantId: number, // L'ID du restaurant auquel l'image est associée
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // Max 5MB
+          new FileTypeValidator({ fileType: 'image/(jpeg|png|gif)' }), // Accepte JPG, PNG, GIF
+        ],
+      }),
+    )
+    file: Express.Multer.File, // Le fichier uploadé par Multer
+  ): Promise<Restaurant> {
+    // Le fichier a été uploadé et stocké localement par Multer grâce à UseInterceptors.
+    // Maintenant, le service va enregistrer les métadonnées de l'image en BD
+    // et potentiellement faire du traitement d'image.
+
+    console.log('Fichier reçu dans le contrôleur:', file);
+
+    return this.restaurantService.uploadImage(restaurantId, file);
+  }
+
+    // Si vous avez besoin de supprimer une image spécifique
+  @Patch(':restaurantId/remove-image/:imageId')
+  async removeRestaurantImage(
+    @Param('restaurantId') restaurantId: number,
+    @Param('imageId') imageId: number,
+  ): Promise<Restaurant> {
+    return this.restaurantService.removeImage(restaurantId, imageId);
+  }
+
+  // Route pour récupérer une image spécifique (optionnel si vous servez des fichiers statiques directement)
+  // @Get('image/:filename')
+  // getRestaurantImage(@Param('filename') filename: string, @Res() res) {
+  //   return res.sendFile(filename, { root: './uploads/images' });
+  // }
 }
 

@@ -10,6 +10,7 @@ import { User } from '../users/entities/user.entity';
 import { HttpModule } from '@nestjs/axios';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
+import { Images } from '../images/entities/images.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UsersModule } from '../users/users.module';
     HttpModule,
     TypeOrmModule.forFeature([MenuCategory]),
     TypeOrmModule.forFeature([RestaurantType]),
+    TypeOrmModule.forFeature([Images]),
     TypeOrmModule.forFeature([User]),
   ],
   controllers: [RestaurantController],

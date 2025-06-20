@@ -12,6 +12,7 @@ import {
   } from 'typeorm';
 import { RestaurantType } from 'src/domain/restaurant_type/entities/restaurant_type.entity';
 import { User } from 'src/domain/users/entities/user.entity';
+import { Images } from 'src/domain/images/entities/images.entity';
   
   @Entity()
   export class Restaurant {
@@ -85,4 +86,7 @@ import { User } from 'src/domain/users/entities/user.entity';
 
   @ManyToOne(() => User, (user) => user.restaurants)
   user: User;
+
+  @OneToMany(() => Images, image => image.restaurant)
+  images: Images[];
   }

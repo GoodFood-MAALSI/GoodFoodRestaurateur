@@ -5,11 +5,13 @@ import * as dotenv from 'dotenv';
 import { ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './domain/utils/filters/http-exception.filter';
 import { ResponseInterceptor } from './domain/utils/interceptors/response.interceptor';
+import { join } from 'path'; // Pour joindre les chemins
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 dotenv.config(); // Charge le fichier .env en tout début
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Activer CORS avec les bonnes options
   app.enableCors({
@@ -38,6 +40,11 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document);
+
+    // Configuration pour servir les fichiers statiques (vos images)
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads', // Les images seront accessibles via /uploads/images/mon-image.jpg
+  });
 
   // Démarrage du serveur
   await app.listen(process.env.APP_PORT);

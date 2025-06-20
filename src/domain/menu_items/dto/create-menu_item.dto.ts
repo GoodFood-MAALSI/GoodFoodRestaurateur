@@ -19,10 +19,6 @@ export class CreateMenuItemDto {
     @IsNotEmpty()
     description: string;
 
-    @ApiProperty({ example: 'iVBORw0KGgoAAAANSUhEUgAAAVIAAAF8CAYAAACdczOpAAAACXBIWXMAAAsSAAALEgHS3' })
-    @IsBase64()
-    picture: string;
-
     @ApiProperty({ example: 10 })
     @IsNumber()
     @IsNotEmpty()
@@ -31,6 +27,6 @@ export class CreateMenuItemDto {
     @ApiProperty({ example: true })
     @IsBoolean()
     @IsNotEmpty()
-    isAvailable: boolean;
+    is_available: boolean;
     
 }
