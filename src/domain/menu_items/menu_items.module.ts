@@ -5,11 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MenuItem } from './entities/menu_item.entity';
 import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
 import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.entity';
+import { MenuItemOptionValue } from '../menu_item_option_values/entities/menu_item_option_value.entity';
 import { Images } from '../images/entities/images.entity';
+import { IsPositionUniqueCreateMenuItemConstraint } from './decorators/is-position-unique-create-menu-items.validator';
 
 @Module({
-  imports:[TypeOrmModule.forFeature([MenuItem]),TypeOrmModule.forFeature([MenuCategory]),TypeOrmModule.forFeature([MenuItemOption]),TypeOrmModule.forFeature([Images])],
+  imports:[TypeOrmModule.forFeature([MenuItem, MenuCategory, MenuItemOption, MenuItemOptionValue,Images])],
   controllers: [MenuItemsController],
-  providers: [MenuItemsService],
+  providers: [MenuItemsService, IsPositionUniqueCreateMenuItemConstraint],
+  exports: [IsPositionUniqueCreateMenuItemConstraint],
 })
 export class MenuItemsModule {}

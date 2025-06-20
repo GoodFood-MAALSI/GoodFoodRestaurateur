@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -15,23 +16,25 @@ export class MenuItemOptionValue {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ example: 'Coca Cola' })
   @Column()
   name: string;
 
-  @ApiProperty({ example: 1.75 })
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   extra_price: number;
+
+  @Column()
+  position: number;
+
+  @Column()
+  menuItemOptionId: number;
+
+  @ManyToOne(() => MenuItemOption, (option) => option.menuItemOptionValues)
+  @JoinColumn({ name: 'menuItemOptionId' })
+  menuItemOption: MenuItemOption;
 
   @CreateDateColumn()
   created_at: Date;
 
   @UpdateDateColumn()
   updated_at: Date;
-
-  @ManyToOne(
-    () => MenuItemOption,
-    (menu_item_option) => menu_item_option.menu_item_option_values,
-  )
-  menu_item_option: MenuItemOption;
 }

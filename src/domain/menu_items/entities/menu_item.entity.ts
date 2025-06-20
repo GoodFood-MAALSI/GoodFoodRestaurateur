@@ -3,53 +3,56 @@ import { Images } from 'src/domain/images/entities/images.entity';
 import { MenuCategory } from 'src/domain/menu_categories/entities/menu_category.entity';
 import { MenuItemOption } from 'src/domain/menu_item_options/entities/menu_item_option.entity';
 import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    ManyToOne,
-    OneToMany,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
-  } from 'typeorm';
-  
-  @Entity()
-  export class MenuItem {
-    @ApiProperty({ example: 1 })
-    @PrimaryGeneratedColumn()
-    id: number;
-  
-    @ApiProperty({ example: 'Menu burger' })
-    @Column()
-    name: string;
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
-    @ApiProperty({ example: 10.50 })
-    @Column({type: "decimal", precision: 10, scale: 2, default: 0})
-    price : number;
+@Entity()
+export class MenuItem {
+  @ApiProperty({ example: 1 })
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @ApiProperty({ example: 'Un délicieux burger avec frite et une boisson au choix.' })
-    @Column()
-    description: string;
+  @Column()
+  name: string;
 
-    @ApiProperty({ example: 10 })
-    @Column({type: "decimal", precision: 10, scale: 2, default: 0})
-    promotion : number;
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  price: number;
 
-    @ApiProperty({ example: true })
-    @Column()
-    is_available : boolean;
-  
-    @CreateDateColumn()
-    created_at: Date;
-  
-    @UpdateDateColumn()
-    updated_at: Date;
+  @Column()
+  description: string;
 
-    @ManyToOne(() => MenuCategory, menu_category => menu_category.menu_items)
-    menu_category: MenuCategory;
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  promotion: number;
 
-    @OneToMany(() => MenuItemOption, (menu_item_option) => menu_item_option.menu_item)
-    menu_item_options: MenuItemOption[];
+  @Column()
+  is_available: boolean;
 
-    @OneToMany(() => Images, image => image.menu_item) // Le second argument doit être la propriété relationnelle dans Images
-    images: Images[]; // La liste des images associées à ce MenuItem
-  }
+  @Column()
+  position: number;
+
+  @Column()
+  menuCategoryId: number;
+
+  @ManyToOne(() => MenuCategory, (menuCategory) => menuCategory.menuItems)
+  @JoinColumn({ name: 'menuCategoryId' })
+  menuCategory: MenuCategory;
+
+  @OneToMany(() => MenuItemOption, (option) => option.menuItem)
+  menuItemOptions: MenuItemOption[];
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  @OneToMany(() => Images, image => image.menu_item) 
+  images: Images[]; 
+}

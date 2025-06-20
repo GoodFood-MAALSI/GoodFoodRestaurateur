@@ -5,24 +5,29 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Restaurant } from './entities/restaurant.entity';
 import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
 import { RestaurantType } from '../restaurant_type/entities/restaurant_type.entity';
-import { PaginationService } from './pagination.service';
 import { User } from '../users/entities/user.entity';
 import { HttpModule } from '@nestjs/axios';
-import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
+import { IsEntityExistsConstraint } from '../utils/validators/is-entity-exists.validator';
+import { IsSiretUniqueConstraint } from './validators/is-siret-unique.validator';
+import { MenuItem } from '../menu_items/entities/menu_item.entity';
+import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.entity';
+import { MenuItemOptionValue } from '../menu_item_option_values/entities/menu_item_option_value.entity';
+import { ClientReviewRestaurant } from '../client-review-restaurant/entities/client-review-restaurant.entity';
 import { Images } from '../images/entities/images.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Restaurant]),
+    TypeOrmModule.forFeature([Restaurant, MenuCategory, RestaurantType, User, MenuItem, MenuItemOption, MenuItemOptionValue, ClientReviewRestaurant,Images]),
     UsersModule,
     HttpModule,
-    TypeOrmModule.forFeature([MenuCategory]),
-    TypeOrmModule.forFeature([RestaurantType]),
-    TypeOrmModule.forFeature([Images]),
-    TypeOrmModule.forFeature([User]),
   ],
   controllers: [RestaurantController],
-  providers: [RestaurantService, PaginationService],
+  providers: [
+    RestaurantService,
+    IsEntityExistsConstraint,
+    IsSiretUniqueConstraint,
+  ],
+  exports: [RestaurantService],
 })
 export class RestaurantModule {}

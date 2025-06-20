@@ -7,11 +7,20 @@ import { Restaurant } from '../restaurant/entities/restaurant.entity';
 import { MenuItem } from '../menu_items/entities/menu_item.entity';
 import { User } from '../users/entities/user.entity';
 import { RestaurantService } from '../restaurant/restaurant.service';
+import { RestaurantType } from '../restaurant_type/entities/restaurant_type.entity';
+import { RestaurantModule } from '../restaurant/restaurant.module';
+import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.entity';
+import { MenuItemOptionValue } from '../menu_item_option_values/entities/menu_item_option_value.entity';
+import { IsPositionUniqueCreateMenuCategoryConstraint } from './decorators/is-position-unique-create-menu-category.validator';
 import { Images } from '../images/entities/images.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MenuCategory]),TypeOrmModule.forFeature([MenuItem]),TypeOrmModule.forFeature([User]),TypeOrmModule.forFeature([Restaurant]),TypeOrmModule.forFeature([Images])],
+    imports: [
+    TypeOrmModule.forFeature([MenuCategory, MenuItem, User, Restaurant, RestaurantType, MenuItemOption, MenuItemOptionValue,Images]),
+    RestaurantModule,
+  ],
   controllers: [MenuCategoriesController],
-  providers: [MenuCategoriesService,RestaurantService],
+  providers: [MenuCategoriesService, IsPositionUniqueCreateMenuCategoryConstraint],
+  exports: [IsPositionUniqueCreateMenuCategoryConstraint],
 })
 export class MenuCategoriesModule {}

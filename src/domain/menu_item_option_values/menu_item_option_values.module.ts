@@ -4,10 +4,12 @@ import { MenuItemOptionValuesController } from './menu_item_option_values.contro
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.entity';
 import { MenuItemOptionValue } from './entities/menu_item_option_value.entity';
+import { IsPositionUniqueCreateMenuItemOptionValueConstraint } from './decorators/is-position-unique-create-menu-item-option-value.validator';
 
 @Module({
   imports: [TypeOrmModule.forFeature([MenuItemOption]),TypeOrmModule.forFeature([MenuItemOptionValue])],
   controllers: [MenuItemOptionValuesController],
-  providers: [MenuItemOptionValuesService],
+  providers: [MenuItemOptionValuesService, IsPositionUniqueCreateMenuItemOptionValueConstraint],
+  exports: [IsPositionUniqueCreateMenuItemOptionValueConstraint],
 })
 export class MenuItemOptionValuesModule {}

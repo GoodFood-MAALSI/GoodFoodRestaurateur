@@ -1,10 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { MenuItemOptionsService } from './menu_item_options.service';
 import { CreateMenuItemOptionDto } from './dto/create-menu_item_option.dto';
 import { UpdateMenuItemOptionDto } from './dto/update-menu_item_option.dto';
-import { MenuItemOptionValue } from '../menu_item_option_values/entities/menu_item_option_value.entity';
-import { CreateMenuItemOptionValueDto } from '../menu_item_option_values/dto/create-menu_item_option_value.dto';
-import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('menu-item-options')
@@ -15,42 +13,21 @@ export class MenuItemOptionsController {
 
   @Post()
   @ApiBody({ type: CreateMenuItemOptionDto })
+  @ApiOperation({ summary: 'Créer une nouvelle option de menu' })
   create(@Body() createMenuItemOptionDto: CreateMenuItemOptionDto) {
     return this.menuItemOptionsService.create(createMenuItemOptionDto);
   }
 
-  @Get()
-  findAll() {
-    return this.menuItemOptionsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.menuItemOptionsService.findOne(+id);
-  }
-
   @Patch(':id')
   @ApiBody({ type: UpdateMenuItemOptionDto })
-  update(@Param('id') id: string, @Body() updateMenuItemOptionDto: UpdateMenuItemOptionDto) {
+  @ApiOperation({ summary: 'Mettre à jour une option de menu' })
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateMenuItemOptionDto: UpdateMenuItemOptionDto) {
     return this.menuItemOptionsService.update(+id, updateMenuItemOptionDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  @ApiOperation({ summary: 'Supprimer une option de menu' })
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.menuItemOptionsService.remove(+id);
-  }
-
-  @Get(':id/option-values')
-  findOptionValuesByOptions(@Param('id') id: string): Promise<MenuItemOptionValue[]> {
-    return this.menuItemOptionsService.getMenuOptionValuessByMenuOptionId(+id);
-  }
-
-  @Post(':id/option-values')
-  @ApiBody({ type: CreateMenuItemOptionValueDto })
-  addValueToOption(
-    @Param('id') id: string,
-    @Body() createMenuItemOptionValueDto: CreateMenuItemOptionValueDto,
-  ): Promise<MenuItemOptionValue> {
-    return this.menuItemOptionsService.addMenuItemOptionValueToMenuItemOption(+id, createMenuItemOptionValueDto);
   }
 }

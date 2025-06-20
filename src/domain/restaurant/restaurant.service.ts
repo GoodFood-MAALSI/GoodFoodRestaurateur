@@ -1,22 +1,29 @@
-import { Injectable, InternalServerErrorException, Logger, NotFoundException, Req, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,InternalServerErrorException, Logger,
+} from '@nestjs/common';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 import { Restaurant } from './entities/restaurant.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Like, Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
-import { CreateMenuCategoryDto } from '../menu_categories/dto/create-menu_category.dto';
 import { RestaurantFilterDto } from './dto/restaurant-filter.dto';
 import { RestaurantType } from '../restaurant_type/entities/restaurant_type.entity';
-import { CreateRestaurantTypeDto } from '../restaurant_type/dto/create-restaurant_type.dto';
 import { User } from '../users/entities/user.entity';
 import * as geolib from 'geolib';
+import { MenuItem } from '../menu_items/entities/menu_item.entity';
+import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.entity';
+import { MenuItemOptionValue } from '../menu_item_option_values/entities/menu_item_option_value.entity';
+import { ClientReviewRestaurant } from '../client-review-restaurant/entities/client-review-restaurant.entity';
 import { StringUtils } from './string-utils.service';
 import * as sharp from 'sharp'; // Pour le traitement d'image
 import * as fs from 'fs/promises'; // Pour les opérations de fichiers asynchrones
 import { Images } from '../images/entities/images.entity';
 import { join } from 'path';
-
 
 @Injectable()
 export class RestaurantService {
@@ -25,156 +32,272 @@ export class RestaurantService {
   constructor(
     @InjectRepository(Restaurant)
     private readonly restaurant_repository: Repository<Restaurant>,
-    @InjectRepository(User)
-    private readonly user_repository: Repository<User>,
-      @InjectRepository(Images) // Injectez le repository de Image
-  private readonly images_repository: Repository<Images>,
+    @InjectRepository(RestaurantType)
+    private readonly restaurant_type: Repository<RestaurantType>,
+    @InjectRepository(MenuCategory)
+    private readonly menuCategoryRepository: Repository<MenuCategory>,
+    @InjectRepository(MenuItem)
+    private readonly menuItemRepository: Repository<MenuItem>,
+    @InjectRepository(MenuItemOption)
+    private readonly menuItemOptionRepository: Repository<MenuItemOption>,
+    @InjectRepository(MenuItemOptionValue)
+    private readonly menuItemOptionValueRepository: Repository<MenuItemOptionValue>,
+    @InjectRepository(ClientReviewRestaurant)
+    private readonly clientReviewRestaurantRepository: Repository<ClientReviewRestaurant>,
+        @InjectRepository(Images)
+    private readonly images_repository: Repository<Images>,
   ) {}
 
-  async create(create_restaurant_dto: CreateRestaurantDto) {
-    const restaurant = this.restaurant_repository.create(create_restaurant_dto);
-    //var apiRequest =`https://api-adresse.data.gouv.fr/search/?q=${create_restaurant_dto.street_number}+${StringUtils.replaceSpacesWithPlus(create_restaurant_dto.street)}&postcode=${create_restaurant_dto.postal_code}`
+  async create(createRestaurantDto: CreateRestaurantDto & { userId: number }) {
+    const { restaurantTypeId, userId, ...restaurantData } = createRestaurantDto;
+
+    const restaurantTypeExists = await this.restaurant_type.existsBy({
+      id: restaurantTypeId,
+    });
+
+    if (!restaurantTypeExists) {
+      throw new NotFoundException(
+        `RestaurantType avec l'ID ${restaurantTypeId} non trouvé`,
+      );
+    }
+
+    const restaurant = this.restaurant_repository.create({
+      ...restaurantData,
+      restaurantTypeId,
+      userId,
+    });
+
     return await this.restaurant_repository.save(restaurant);
   }
 
- async findAll(
+  async findAll(
     filters: RestaurantFilterDto,
-    page: number,
-    limit: number,
+    page = 1,
+    limit = 10,
   ): Promise<{ restaurants: Restaurant[]; total: number }> {
-    const offset = (page - 1) * limit;
+    const where: Record<string, any> = {};
 
-    const where: any = {};
     if (filters.name) {
-      where.name = Like(`%${filters.name}%`);
+      where.name = ILike(`%${filters.name}%`);
     }
-    if (filters.description) {
-      where.description = Like(`%${filters.description}%`);
-    }
-    if (filters.is_open !== undefined && filters.is_open !== null) {
+
+    if (filters.is_open !== undefined) {
       where.is_open = filters.is_open;
     }
+
     if (filters.city) {
-      where.city = Like(`%${filters.city}%`);
-    }
-    if (filters.country) {
-      where.country = Like(`%${filters.country}%`);
-    }
-    if (filters.resturant_type) {
-      where.restaurant_type = Like(`%${filters.resturant_type}%`);
+      where.city = ILike(`%${filters.city}%`);
     }
 
-    // Récupérer tous les restaurants qui correspondent aux autres filtres
-    // sans la pagination et le filtrage de distance pour l'instant.
-    // Cela récupérera potentiellement beaucoup de données.
-    const allMatchingRestaurants = await this.restaurant_repository.find({ where: where });
+    if (filters.restaurant_type) {
+      where.restaurantTypeId = filters.restaurant_type;
+    }
 
-    let filteredByDistanceRestaurants = allMatchingRestaurants;
-
-    if (filters.lat && filters.long && filters.perimeter) {
-      const centerPoint = { latitude: filters.lat, longitude: filters.long };
-      const perimeterMeters = filters.perimeter; // Assurez-vous que le périmètre est en mètres
-
-      filteredByDistanceRestaurants = allMatchingRestaurants.filter(restaurant => {
-        // Assurez-vous que le restaurant a aussi des coordonnées
-        if (restaurant.lat === undefined || restaurant.long === undefined || restaurant.lat === null || restaurant.long === null) {
-          return false; // Ignorer les restaurants sans coordonnées
-        }
-
-        const restaurantPoint = { latitude: restaurant.lat, longitude: restaurant.long };
-        const distance = geolib.getDistance(centerPoint, restaurantPoint); // Calculer la distance
-        console.log("distance"+distance)
-        return distance <= perimeterMeters; // Filtrer
+    try {
+      const allRestaurants = await this.restaurant_repository.find({
+        where,
+        relations: ['restaurantType'],
       });
+
+      // Fetch review stats for all restaurants in one query
+      const reviewStats = await this.clientReviewRestaurantRepository
+        .createQueryBuilder('review')
+        .select('review.restaurantId', 'restaurantId')
+        .addSelect('COUNT(review.id)', 'review_count')
+        .addSelect('AVG(review.rating)', 'average_rating')
+        .where('review.restaurantId IN (:...ids)', {
+          ids: allRestaurants.map((r) => r.id),
+        })
+        .groupBy('review.restaurantId')
+        .getRawMany();
+
+      // Map review stats to restaurants
+      const restaurantsWithStats = allRestaurants.map((restaurant) => {
+        const stats = reviewStats.find(
+          (s) => s.restaurantId === restaurant.id,
+        );
+        restaurant.review_count = stats ? parseInt(stats.review_count) : 0;
+        restaurant.average_rating = stats
+          ? parseFloat(parseFloat(stats.average_rating).toFixed(2))
+          : 0;
+        return restaurant;
+      });
+
+      let filteredRestaurants = restaurantsWithStats;
+      if (filters.lat && filters.long && filters.perimeter) {
+        const center = { latitude: filters.lat, longitude: filters.long };
+
+        filteredRestaurants = restaurantsWithStats.filter((restaurant) => {
+          if (restaurant.lat == null || restaurant.long == null) return false;
+
+          const distance = geolib.getDistance(center, {
+            latitude: restaurant.lat,
+            longitude: restaurant.long,
+          });
+
+          return distance <= filters.perimeter;
+        });
+      }
+
+      const offset = (page - 1) * limit;
+      const paginatedRestaurants = filteredRestaurants.slice(
+        offset,
+        offset + limit,
+      );
+      const total = filteredRestaurants.length;
+
+      return { restaurants: paginatedRestaurants, total };
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: 'Échec de la récupération des restaurants',
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-
-    // Appliquer la pagination APRES le filtrage de distance
-    const paginatedData = filteredByDistanceRestaurants.slice(offset, offset + limit);
-    const total = filteredByDistanceRestaurants.length; // Le total est le nombre après filtrage
-
-    return { restaurants: paginatedData, total };
   }
 
-
   async findOne(id: number): Promise<Restaurant> {
-    const restaurant = await this.restaurant_repository.findOne({ where: { id } });
+    const restaurant = await this.restaurant_repository.findOne({
+      where: { id },
+      relations: [
+        'restaurantType',
+        'user',
+        'menuCategories',
+        'menuCategories.menuItems',
+        'menuCategories.menuItems.menuItemOptions',
+        'menuCategories.menuItems.menuItemOptions.menuItemOptionValues',
+      ],
+    });
 
     if (!restaurant) {
-      throw new NotFoundException(`Restaurant with ID ${id} not found`);
+      throw new NotFoundException(`Restaurant avec l'ID ${id} non trouvé`);
     }
+
+    // Fetch review stats
+    const reviewStats = await this.clientReviewRestaurantRepository
+      .createQueryBuilder('review')
+      .select('COUNT(review.id)', 'review_count')
+      .addSelect('AVG(review.rating)', 'average_rating')
+      .where('review.restaurantId = :id', { id })
+      .getRawOne();
+
+    restaurant.review_count = reviewStats ? parseInt(reviewStats.review_count) : 0;
+    restaurant.average_rating = reviewStats
+      ? parseFloat(parseFloat(reviewStats.average_rating).toFixed(2))
+      : 0;
 
     return restaurant;
   }
 
-  async update(id: number, update_restaurant_dto: UpdateRestaurantDto) {
-
+  async update(id: number, updateDto: UpdateRestaurantDto) {
     const restaurant = await this.findOne(id);
-
-    if(!restaurant){
-      throw new NotFoundException();
+    if (!restaurant) {
+      throw new NotFoundException(`Restaurant with ID ${id} not found`);
     }
 
-    Object.assign(restaurant,update_restaurant_dto);
+    if (updateDto.siret && updateDto.siret !== restaurant.siret) {
+      const existing = await this.restaurant_repository.findOne({
+        where: { siret: updateDto.siret },
+      });
+
+      if (existing) {
+        throw new ConflictException(
+          `Le numéro SIRET ${updateDto.siret} est déjà utilisé`,
+        );
+      }
+    }
+
+    Object.assign(restaurant, updateDto);
     return await this.restaurant_repository.save(restaurant);
   }
 
-  async remove(id: number) {
-    const restaurant = await this.findOne(id);
-
-    if(!restaurant){
-      throw new NotFoundException();
-    }
-    return await this.restaurant_repository.remove(restaurant);
-  }
-
-  async getMenuCategoriesByRestaurantId(restaurant_id: number): Promise<MenuCategory[]> {
+  async remove(id: number): Promise<void> {
     const restaurant = await this.restaurant_repository.findOne({
-      where: { id: restaurant_id },
-      relations: ['menuCategories'],
+      where: { id },
     });
-
     if (!restaurant) {
-      throw new NotFoundException(`Restaurant avec l'ID ${restaurant_id} non trouvé`);
+      throw new NotFoundException(`Restaurant avec l'ID ${id} non trouvé.`);
     }
 
-    return restaurant.menu_categories;
-  }
-
-    async getRestaurantsByUserId(userId: number): Promise<Restaurant[]> {
-    const restaurants = await this.restaurant_repository.find({
-      where: { user: { id: userId } },
-    });
-    return restaurants;
-  }
-
-    async addUserToRestaurant(
-    restaurantId: number,
-    userId: number,
-  ): Promise<Restaurant> {
-    const restaurant = await this.restaurant_repository.findOne({
-      where: { id: restaurantId },
-      relations: ['user'], // Charger la relation avec l'utilisateur
+    const menuCategories = await this.menuCategoryRepository.find({
+      where: { restaurantId: id },
     });
 
-    if (!restaurant) {
-      throw new NotFoundException(
-        `Restaurant with ID ${restaurantId} not found`,
+    for (const menuCategory of menuCategories) {
+      const menuItems = await this.menuItemRepository.find({
+        where: { menuCategoryId: menuCategory.id },
+      });
+
+      for (const menuItem of menuItems) {
+        const menuItemOptions = await this.menuItemOptionRepository.find({
+          where: { menuItemId: menuItem.id },
+        });
+
+        for (const menuItemOption of menuItemOptions) {
+          await this.menuItemOptionValueRepository.delete({
+            menuItemOptionId: menuItemOption.id,
+          });
+        }
+
+        await this.menuItemOptionRepository.delete({
+          menuItemId: menuItem.id },
+        );
+      }
+
+      await this.menuItemRepository.delete({
+        menuCategoryId: menuCategory.id },
       );
     }
 
-    const user = await this.user_repository.findOne({
-      where: { id: userId },
-    });
+    await this.menuCategoryRepository.delete({
+      restaurantId: id },
+    );
 
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
-    restaurant.user = user; // Assigner l'utilisateur au restaurant
-    return await this.restaurant_repository.save(restaurant);
+    await this.restaurant_repository.remove(restaurant);
   }
 
-async uploadImage(restaurantId: number, file: Express.Multer.File): Promise<Restaurant> {
+  async getRestaurantFromUser(
+    userId: number,
+    page = 1,
+    limit = 10,
+  ): Promise<{ restaurants: Restaurant[]; total: number }> {
+    const [restaurants, total] = await this.restaurant_repository.findAndCount({
+      where: { userId },
+      relations: ['restaurantType'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { created_at: 'DESC' },
+    });
+
+    // Fetch review stats for all restaurants in one query
+    const reviewStats = await this.clientReviewRestaurantRepository
+      .createQueryBuilder('review')
+      .select('review.restaurantId', 'restaurantId')
+      .addSelect('COUNT(review.id)', 'review_count')
+      .addSelect('AVG(review.rating)', 'average_rating')
+      .where('review.restaurantId IN (:...ids)', {
+        ids: restaurants.map((r) => r.id),
+      })
+      .groupBy('review.restaurantId')
+      .getRawMany();
+
+    // Map review stats to restaurants
+    const restaurantsWithStats = restaurants.map((restaurant) => {
+      const stats = reviewStats.find(
+        (s) => s.restaurantId === restaurant.id,
+      );
+      restaurant.review_count = stats ? parseInt(stats.review_count) : 0;
+      restaurant.average_rating = stats
+        ? parseFloat(parseFloat(stats.average_rating).toFixed(2))
+        : 0;
+      return restaurant;
+    });
+
+    return { restaurants: restaurantsWithStats, total };
+  }
+  async uploadImage(restaurantId: number, file: Express.Multer.File): Promise<Restaurant> {
     const restaurant = await this.restaurant_repository.findOne({
       where: { id: restaurantId },
       relations: ['images'], // Charger les images existantes pour ce restaurant

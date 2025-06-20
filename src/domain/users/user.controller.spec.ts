@@ -3,29 +3,30 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { Restaurant } from '../restaurant/entities/restaurant.entity'; // Import Restaurant entity
+import { Restaurant } from '../restaurant/entities/restaurant.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { ExecutionContext } from '@nestjs/common';
+import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
 
 // Mock du service
 const mockUsersService = {
-  findOneUser: jest.fn((options: { id: number }) => { // Changed parameter type
+  findOneUser: jest.fn((options: { id: number }) => {
     if (options.id === 1) {
       return { id: 1, first_name: 'John', last_name: 'Doe' };
     }
-    return null; // Simulate user not found
+    return null;
   }),
   updateUser: jest.fn((id: number, dto: UpdateUserDto) => {
     if (id === 1) {
-      return { id: 1, ...dto };
+      return { id: 1, ...dto, updated_at: new Date() };
     }
-    throw new HttpException('User not found', HttpStatus.NOT_FOUND); // Simulate user not found
+    throw new HttpException('User not found', HttpStatus.NOT_FOUND);
   }),
   deleteUser: jest.fn((id: number) => {
     if (id === 1) {
-      return Promise.resolve();
+      return Promise.resolve({ message: 'Utilisateur supprimé avec succès' });
     }
-    throw new HttpException('User not found', HttpStatus.NOT_FOUND); // Simulate user not found
+    throw new HttpException('User not found', HttpStatus.NOT_FOUND);
   }),
   getRestaurantsByUserId: jest.fn((userId: number) => {
     if (userId === 1) {
@@ -34,7 +35,7 @@ const mockUsersService = {
         { id: 102, name: 'Restaurant B' },
       ] as Restaurant[]);
     } else if (userId === 2) {
-      return Promise.resolve([]); // Return empty array for user 2
+      return Promise.resolve([]);
     }
     throw new HttpException('User not found', HttpStatus.NOT_FOUND);
   }),
@@ -47,9 +48,21 @@ class AuthGuardMock {
   }
 }
 
+// Helper pour générer un JwtPayloadType valide
+function createMockJwtPayload(id: number): JwtPayloadType {
+  return {
+    id,
+    sessionId: 123,
+    iat: Math.floor(Date.now() / 1000) - 1000,
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  };
+}
+
 describe('UsersController', () => {
   let controller: UsersController;
   let service: UsersService;
+
+  const currentUser = createMockJwtPayload(1);
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -75,59 +88,86 @@ describe('UsersController', () => {
 
   describe('findOne', () => {
     it('should find a user by ID', async () => {
-      const result = await controller.findOne('1');
+      const result = await controller.findOne('1', currentUser);
       expect(service.findOneUser).toHaveBeenCalledWith({ id: 1 });
       expect(result).toEqual({ id: 1, first_name: 'John', last_name: 'Doe' });
     });
 
     it('should throw HttpException if user not found', async () => {
-      try {
-        await controller.findOne('2');
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.message).toBe('User not found');
-        expect(error.status).toBe(HttpStatus.NOT_FOUND);
-      }
+      await expect(controller.findOne('2', createMockJwtPayload(2))).rejects.toThrow(
+        HttpException,
+      );
+    });
+
+    it('should throw Forbidden if currentUser.id !== requested id', async () => {
+      await expect(controller.findOne('2', currentUser)).rejects.toThrow(
+        HttpException,
+      );
+    });
+
+    it('should throw Unauthorized if no currentUser', async () => {
+      await expect(controller.findOne('1', null)).rejects.toThrow(
+        HttpException,
+      );
     });
   });
 
   describe('update', () => {
+    const updateDto: UpdateUserDto = {
+      first_name: 'Updated John',
+      last_name: 'Doe',
+    };
+
     it('should update a user', async () => {
-      const updateDto: UpdateUserDto = { first_name: 'Updated John', last_name: 'Doe' };
-      const result = await controller.update('1', updateDto);
+      const result = await controller.update('1', updateDto, currentUser);
       expect(service.updateUser).toHaveBeenCalledWith(1, updateDto);
-      expect(result).toEqual({ id: 1, first_name: 'Updated John', last_name: 'Doe' });
+      expect(result).toMatchObject({
+        id: 1,
+        first_name: 'Updated John',
+        last_name: 'Doe',
+      });
     });
 
     it('should throw HttpException if user not found', async () => {
-      const updateDto: UpdateUserDto = { first_name: 'Updated John', last_name: 'Doe' };
-      try {
-        await controller.update('2', updateDto);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.message).toBe('User not found');
-        expect(error.status).toBe(HttpStatus.NOT_FOUND);
-      }
+      await expect(
+        controller.update('2', updateDto, createMockJwtPayload(2)),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should throw Forbidden if currentUser.id !== requested id', async () => {
+      await expect(
+        controller.update('2', updateDto, currentUser),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should throw Unauthorized if no currentUser', async () => {
+      await expect(controller.update('1', updateDto, null)).rejects.toThrow(
+        HttpException,
+      );
     });
   });
 
   describe('remove', () => {
     it('should delete a user', async () => {
-      const result = await controller.remove('1');
+      const result = await controller.remove('1', currentUser);
       expect(service.deleteUser).toHaveBeenCalledWith(1);
+      expect(result).toEqual({ message: 'Utilisateur supprimé avec succès' });
     });
 
     it('should throw HttpException if user not found', async () => {
-      try {
-        await controller.remove('2');
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.message).toBe('User not found');
-        expect(error.status).toBe(HttpStatus.NOT_FOUND);
-      }
+      await expect(controller.remove('2', createMockJwtPayload(2))).rejects.toThrow(
+        HttpException,
+      );
+    });
+
+    it('should throw Forbidden if currentUser.id !== requested id', async () => {
+      await expect(controller.remove('2', currentUser)).rejects.toThrow(
+        HttpException,
+      );
+    });
+
+    it('should throw Unauthorized if no currentUser', async () => {
+      await expect(controller.remove('1', null)).rejects.toThrow(HttpException);
     });
   });
-
- 
 });
-
