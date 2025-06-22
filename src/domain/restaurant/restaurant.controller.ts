@@ -10,7 +10,12 @@ import {
   UseGuards,
   Req,
   HttpException,
-  HttpStatus,UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator
+  HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { RestaurantService } from './restaurant.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
@@ -19,8 +24,8 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
-   ApiConsumes,
-   ApiParam,
+  ApiConsumes,
+  ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
@@ -74,19 +79,16 @@ export class RestaurantController {
 
   @Get()
   @ApiOperation({ summary: 'Récupérer la liste de tous les restaurants' })
-  @ApiQuery({ type: RestaurantFilterDto })
-  async findAll(
-    @Query() filters: RestaurantFilterDto,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-    @Req() req: Request,
-  ) {
+  async findAll(@Query() filters: RestaurantFilterDto, @Req() req: Request) {
     try {
+      const { page = 1, limit = 10 } = filters;
+
       const { restaurants, total } = await this.restaurantService.findAll(
         filters,
         page,
         limit,
       );
+
       const { links, meta } = Pagination.generatePaginationMetadata(
         req,
         page,
@@ -233,15 +235,17 @@ export class RestaurantController {
       );
     }
   }
-   @Post(':id/upload-image')
+  @Post(':id/upload-image')
   @ApiOperation({ summary: 'Uploader une image pour un restaurant spécifique' }) // Description pour Swagger
   @ApiParam({ name: 'id', description: 'ID du restaurant', type: Number }) // Description du paramètre d'URL
   @ApiConsumes('multipart/form-data') // Indique que le type de contenu est multipart/form-data
-  @ApiBody({ // Décrit le corps de la requête pour l'upload de fichier
+  @ApiBody({
+    // Décrit le corps de la requête pour l'upload de fichier
     schema: {
       type: 'object',
       properties: {
-        image: { // 'image' doit correspondre au nom du champ dans FileInterceptor
+        image: {
+          // 'image' doit correspondre au nom du champ dans FileInterceptor
           type: 'string',
           format: 'binary', // Indique à Swagger qu'il s'agit d'un fichier binaire
           description: 'Fichier image à uploader (JPEG, PNG, GIF, max 5MB)',
@@ -274,7 +278,7 @@ export class RestaurantController {
     return this.restaurantService.uploadImage(restaurantId, file);
   }
 
-    // Si vous avez besoin de supprimer une image spécifique
+  // Si vous avez besoin de supprimer une image spécifique
   @Patch(':restaurantId/remove-image/:imageId')
   async removeRestaurantImage(
     @Param('restaurantId') restaurantId: number,
@@ -289,4 +293,3 @@ export class RestaurantController {
   //   return res.sendFile(filename, { root: './uploads/images' });
   // }
 }
-
