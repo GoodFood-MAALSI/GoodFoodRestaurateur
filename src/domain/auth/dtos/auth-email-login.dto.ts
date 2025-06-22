@@ -6,6 +6,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class AuthEmailLoginDto {
   @ApiProperty({ example: 'example@gmail.com' })
   @Transform(lowerCaseTransformer)
+  @IsNotEmpty()
   email: string;
 
   @ApiProperty()
