@@ -1,16 +1,23 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsOptional, IsBoolean, IsString, IsNumber, IsInt } from 'class-validator';
+import {
+  IsOptional,
+  IsBoolean,
+  IsString,
+  IsNumber,
+  IsInt,
+} from 'class-validator';
 import { IsEntityExists } from '../../utils/validators/is-entity-exists.validator';
 import { RestaurantType } from 'src/domain/restaurant_type/entities/restaurant_type.entity';
 import { AreFieldsRequiredTogether } from 'src/domain/utils/validators/are-required-together.validator';
 
 @AreFieldsRequiredTogether(['lat', 'long', 'perimeter'], {
-  message: 'lat, long, et perimeter doivent être fournis ensemble ou aucun ne doit l’être.',
+  message:
+    'lat, long, et perimeter doivent être fournis ensemble ou aucun ne doit l’être.',
 })
 export class RestaurantFilterDto {
   @ApiPropertyOptional({
-    description: 'Filtrer par nom (partiel ou complet)',
+    description: 'Filtrer par nom ou description (partiel ou complet)',
     example: 'Chicorée',
   })
   @IsOptional()
@@ -40,14 +47,17 @@ export class RestaurantFilterDto {
   city?: string;
 
   @ApiPropertyOptional({
-    description: "Filtrer par ID du type de restaurant (doit exister dans la table restaurant_type)",
+    description:
+      'Filtrer par ID du type de restaurant (doit exister dans la table restaurant_type)',
     example: 1,
     type: Number,
   })
   @IsOptional()
   @IsInt()
   @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
-  @IsEntityExists(RestaurantType, { message: 'Le type de restaurant n\'existe pas' })
+  @IsEntityExists(RestaurantType, {
+    message: "Le type de restaurant n'existe pas",
+  })
   restaurant_type?: number;
 
   @ApiPropertyOptional({
@@ -76,4 +86,24 @@ export class RestaurantFilterDto {
   @IsInt()
   @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
   perimeter?: number;
+
+  @ApiPropertyOptional({
+    description: 'Numéro de la page pour la pagination',
+    example: 1,
+    type: Number,
+  })
+  @IsOptional()
+  @IsInt()
+  @Transform(({ value }) => (value ? parseInt(value, 10) : 1))
+  page?: number;
+
+  @ApiPropertyOptional({
+    description: "Nombre d'éléments par page pour la pagination",
+    example: 10,
+    type: Number,
+  })
+  @IsOptional()
+  @IsInt()
+  @Transform(({ value }) => (value ? parseInt(value, 10) : 10))
+  limit?: number;
 }

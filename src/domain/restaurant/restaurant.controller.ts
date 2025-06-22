@@ -74,65 +74,7 @@ export class RestaurantController {
 
   @Get()
   @ApiOperation({ summary: 'Récupérer la liste de tous les restaurants' })
-  @ApiQuery({
-    name: 'name',
-    required: false,
-    type: String,
-    description: 'Filtrer par nom',
-  })
-  @ApiQuery({
-    name: 'is_open',
-    required: false,
-    type: Boolean,
-    description: "Filtrer par état d'ouverture",
-  })
-  @ApiQuery({
-    name: 'city',
-    required: false,
-    type: String,
-    description: 'Filtrer par ville',
-  })
-  @ApiQuery({
-    name: 'restaurant_type',
-    required: false,
-    type: Number,
-    description: 'Filtrer par type de restaurant',
-  })
-  @ApiQuery({
-    name: 'lat',
-    required: false,
-    type: Number,
-    description: 'Latitude du point de recherche',
-    example: 50.6335,
-  })
-  @ApiQuery({
-    name: 'long',
-    required: false,
-    type: Number,
-    description: 'Longitude du point de recherche',
-    example: 3.0645,
-  })
-  @ApiQuery({
-    name: 'perimeter',
-    required: false,
-    type: Number,
-    description: 'Périmètre en mètres autour du point',
-    example: 1000,
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Numéro de page',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Nombre maximum d’items par page',
-    example: 10,
-  })
+  @ApiQuery({ type: RestaurantFilterDto })
   async findAll(
     @Query() filters: RestaurantFilterDto,
     @Query('page') page = 1,

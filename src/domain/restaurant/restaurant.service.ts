@@ -3,7 +3,9 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
-  NotFoundException,InternalServerErrorException, Logger,
+  NotFoundException,
+  InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
@@ -28,7 +30,7 @@ import { join } from 'path';
 @Injectable()
 export class RestaurantService {
   private readonly logger = new Logger(RestaurantService.name);
-  
+
   constructor(
     @InjectRepository(Restaurant)
     private readonly restaurant_repository: Repository<Restaurant>,
@@ -44,7 +46,7 @@ export class RestaurantService {
     private readonly menuItemOptionValueRepository: Repository<MenuItemOptionValue>,
     @InjectRepository(ClientReviewRestaurant)
     private readonly clientReviewRestaurantRepository: Repository<ClientReviewRestaurant>,
-        @InjectRepository(Images)
+    @InjectRepository(Images)
     private readonly images_repository: Repository<Images>,
   ) {}
 
@@ -75,29 +77,45 @@ export class RestaurantService {
     page = 1,
     limit = 10,
   ): Promise<{ restaurants: Restaurant[]; total: number }> {
-    const where: Record<string, any> = {};
-
-    if (filters.name) {
-      where.name = ILike(`%${filters.name}%`);
-    }
-
-    if (filters.is_open !== undefined) {
-      where.is_open = filters.is_open;
-    }
-
-    if (filters.city) {
-      where.city = ILike(`%${filters.city}%`);
-    }
-
-    if (filters.restaurant_type) {
-      where.restaurantTypeId = filters.restaurant_type;
-    }
-
     try {
-      const allRestaurants = await this.restaurant_repository.find({
-        where,
-        relations: ['restaurantType'],
-      });
+      const queryBuilder = this.restaurant_repository
+        .createQueryBuilder('restaurant')
+        .leftJoinAndSelect('restaurant.restaurantType', 'restaurantType');
+
+      if (filters.name) {
+        queryBuilder.andWhere(
+          '(restaurant.name ILIKE :name OR restaurant.description ILIKE :name)',
+          { name: `%${filters.name}%` },
+        );
+      }
+
+      if (filters.is_open !== undefined) {
+        queryBuilder.andWhere('restaurant.is_open = :is_open', {
+          is_open: filters.is_open,
+        });
+      }
+
+      if (filters.city) {
+        queryBuilder.andWhere('restaurant.city ILIKE :city', {
+          city: `%${filters.city}%`,
+        });
+      }
+
+      if (filters.restaurant_type) {
+        queryBuilder.andWhere(
+          'restaurant.restaurantTypeId = :restaurant_type',
+          {
+            restaurant_type: filters.restaurant_type,
+          },
+        );
+      }
+
+      const allRestaurants = await queryBuilder.getMany();
+
+      // If no restaurants are found, return an empty result
+      if (!allRestaurants.length) {
+        return { restaurants: [], total: 0 };
+      }
 
       // Fetch review stats for all restaurants in one query
       const reviewStats = await this.clientReviewRestaurantRepository
@@ -113,9 +131,7 @@ export class RestaurantService {
 
       // Map review stats to restaurants
       const restaurantsWithStats = allRestaurants.map((restaurant) => {
-        const stats = reviewStats.find(
-          (s) => s.restaurantId === restaurant.id,
-        );
+        const stats = reviewStats.find((s) => s.restaurantId === restaurant.id);
         restaurant.review_count = stats ? parseInt(stats.review_count) : 0;
         restaurant.average_rating = stats
           ? parseFloat(parseFloat(stats.average_rating).toFixed(2))
@@ -183,7 +199,9 @@ export class RestaurantService {
       .where('review.restaurantId = :id', { id })
       .getRawOne();
 
-    restaurant.review_count = reviewStats ? parseInt(reviewStats.review_count) : 0;
+    restaurant.review_count = reviewStats
+      ? parseInt(reviewStats.review_count)
+      : 0;
     restaurant.average_rating = reviewStats
       ? parseFloat(parseFloat(reviewStats.average_rating).toFixed(2))
       : 0;
@@ -242,18 +260,18 @@ export class RestaurantService {
         }
 
         await this.menuItemOptionRepository.delete({
-          menuItemId: menuItem.id },
-        );
+          menuItemId: menuItem.id,
+        });
       }
 
       await this.menuItemRepository.delete({
-        menuCategoryId: menuCategory.id },
-      );
+        menuCategoryId: menuCategory.id,
+      });
     }
 
     await this.menuCategoryRepository.delete({
-      restaurantId: id },
-    );
+      restaurantId: id,
+    });
 
     await this.restaurant_repository.remove(restaurant);
   }
@@ -285,9 +303,7 @@ export class RestaurantService {
 
     // Map review stats to restaurants
     const restaurantsWithStats = restaurants.map((restaurant) => {
-      const stats = reviewStats.find(
-        (s) => s.restaurantId === restaurant.id,
-      );
+      const stats = reviewStats.find((s) => s.restaurantId === restaurant.id);
       restaurant.review_count = stats ? parseInt(stats.review_count) : 0;
       restaurant.average_rating = stats
         ? parseFloat(parseFloat(stats.average_rating).toFixed(2))
@@ -297,7 +313,10 @@ export class RestaurantService {
 
     return { restaurants: restaurantsWithStats, total };
   }
-  async uploadImage(restaurantId: number, file: Express.Multer.File): Promise<Restaurant> {
+  async uploadImage(
+    restaurantId: number,
+    file: Express.Multer.File,
+  ): Promise<Restaurant> {
     const restaurant = await this.restaurant_repository.findOne({
       where: { id: restaurantId },
       relations: ['images'], // Charger les images existantes pour ce restaurant
@@ -305,8 +324,17 @@ export class RestaurantService {
 
     if (!restaurant) {
       // Supprimer le fichier uploadé si le restaurant n'existe pas
-      await fs.unlink(file.path).catch(e => this.logger.error(`Erreur lors de la suppression du fichier temporaire: ${file.path}`, e.stack));
-      throw new NotFoundException(`Restaurant with ID ${restaurantId} not found.`);
+      await fs
+        .unlink(file.path)
+        .catch((e) =>
+          this.logger.error(
+            `Erreur lors de la suppression du fichier temporaire: ${file.path}`,
+            e.stack,
+          ),
+        );
+      throw new NotFoundException(
+        `Restaurant with ID ${restaurantId} not found.`,
+      );
     }
 
     let newFileName: string;
@@ -314,24 +342,32 @@ export class RestaurantService {
 
     try {
       // --- PARTIE 1: Gérer l'ancienne image (si elle existe) ---
-      const existingImage = restaurant.images.find(img => img.isMain); // Ou la première image trouvée, si vous n'avez pas de `isMain`
+      const existingImage = restaurant.images.find((img) => img.isMain); // Ou la première image trouvée, si vous n'avez pas de `isMain`
 
       if (existingImage) {
-        this.logger.log(`Image existante trouvée pour le restaurant ${restaurantId}. ID: ${existingImage.id}, Chemin: ${existingImage.path}`);
+        this.logger.log(
+          `Image existante trouvée pour le restaurant ${restaurantId}. ID: ${existingImage.id}, Chemin: ${existingImage.path}`,
+        );
         const oldFilePath = join('./uploads', existingImage.path); // Reconstruire le chemin complet
-        
+
         try {
           // Supprimer le fichier physique de l'ancienne image
           await fs.unlink(oldFilePath);
-          this.logger.log(`Ancienne image supprimée du système de fichiers: ${oldFilePath}`);
+          this.logger.log(
+            `Ancienne image supprimée du système de fichiers: ${oldFilePath}`,
+          );
         } catch (unlinkError) {
           // Loguer l'erreur mais ne pas bloquer si le fichier n'existe pas ou ne peut pas être supprimé (ex: déjà supprimé)
-          this.logger.warn(`Impossible de supprimer l'ancienne image du système de fichiers: ${oldFilePath}. Erreur: ${unlinkError.message}`);
+          this.logger.warn(
+            `Impossible de supprimer l'ancienne image du système de fichiers: ${oldFilePath}. Erreur: ${unlinkError.message}`,
+          );
         }
 
         // Supprimer l'enregistrement de l'ancienne image de la base de données
         await this.images_repository.remove(existingImage);
-        this.logger.log(`Ancienne image supprimée de la base de données. ID: ${existingImage.id}`);
+        this.logger.log(
+          `Ancienne image supprimée de la base de données. ID: ${existingImage.id}`,
+        );
       }
       // --- FIN PARTIE 1 ---
 
@@ -348,7 +384,14 @@ export class RestaurantService {
         .toFile(processedFilePathFull);
 
       // Supprimer le fichier original non traité (temporaire de Multer)
-      await fs.unlink(file.path).catch(e => this.logger.error(`Erreur lors de la suppression du fichier original temporaire: ${file.path}`, e.stack));
+      await fs
+        .unlink(file.path)
+        .catch((e) =>
+          this.logger.error(
+            `Erreur lors de la suppression du fichier original temporaire: ${file.path}`,
+            e.stack,
+          ),
+        );
 
       // Créer et sauvegarder le nouvel enregistrement d'image
       const newImage = this.images_repository.create({
@@ -356,16 +399,18 @@ export class RestaurantService {
         path: relativePathForDb, // Chemin relatif ou URL pour la base de données
         mimetype: 'image/webp', // Mime type après conversion
         size: (await fs.stat(processedFilePathFull)).size, // Taille du fichier traité
-        restaurant: restaurant,          // Link the Restaurant object
-        restaurant_id: restaurant.id,    // Explicitly set the ID
-        menu_item: null,                 // Explicitly set menu_item to null
-        menu_item_id: null,              // Explicitly set menu_item_id to null
-        entityType: 'restaurant',        // Set the type
+        restaurant: restaurant, // Link the Restaurant object
+        restaurant_id: restaurant.id, // Explicitly set the ID
+        menu_item: null, // Explicitly set menu_item to null
+        menu_item_id: null, // Explicitly set menu_item_id to null
+        entityType: 'restaurant', // Set the type
         isMain: true,
       });
 
       await this.images_repository.save(newImage);
-      this.logger.log(`Nouvelle image enregistrée pour le restaurant ${restaurantId}. Nom: ${newFileName}`);
+      this.logger.log(
+        `Nouvelle image enregistrée pour le restaurant ${restaurantId}. Nom: ${newFileName}`,
+      );
       // --- FIN PARTIE 2 ---
 
       // Recharger le restaurant pour inclure la nouvelle image et ses relations mises à jour
@@ -374,37 +419,68 @@ export class RestaurantService {
         where: { id: restaurantId },
         relations: ['images'],
       });
-
     } catch (error) {
-      this.logger.error(`Erreur lors du traitement ou de l'enregistrement de l'image pour le restaurant ${restaurantId}: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erreur lors du traitement ou de l'enregistrement de l'image pour le restaurant ${restaurantId}: ${error.message}`,
+        error.stack,
+      );
       // Supprimer le fichier processed si une erreur survient APRÈS le traitement mais AVANT la sauvegarde DB
       if (file && file.path) {
         // Supprimer le fichier temporaire de multer
-        await fs.unlink(file.path).catch(e => this.logger.error(`Erreur lors de la suppression du fichier temporaire en cas d'erreur globale: ${file.path}`, e.stack));
+        await fs
+          .unlink(file.path)
+          .catch((e) =>
+            this.logger.error(
+              `Erreur lors de la suppression du fichier temporaire en cas d'erreur globale: ${file.path}`,
+              e.stack,
+            ),
+          );
       }
       // Si le fichier traité a été créé avant l'erreur, tentez de le supprimer aussi
-      if (processedFilePathFull && (await fs.stat(processedFilePathFull).catch(() => null))) { // Vérifier si le fichier existe
-         await fs.unlink(processedFilePathFull).catch(e => this.logger.error(`Erreur lors de la suppression du fichier traité en cas d'erreur globale: ${processedFilePathFull}`, e.stack));
+      if (
+        processedFilePathFull &&
+        (await fs.stat(processedFilePathFull).catch(() => null))
+      ) {
+        // Vérifier si le fichier existe
+        await fs
+          .unlink(processedFilePathFull)
+          .catch((e) =>
+            this.logger.error(
+              `Erreur lors de la suppression du fichier traité en cas d'erreur globale: ${processedFilePathFull}`,
+              e.stack,
+            ),
+          );
       }
 
-      throw new InternalServerErrorException('Échec du traitement et de l\'enregistrement de l\'image.');
+      throw new InternalServerErrorException(
+        "Échec du traitement et de l'enregistrement de l'image.",
+      );
     }
   }
 
-   async removeImage(restaurantId: number, imageId: number): Promise<Restaurant> {
+  async removeImage(
+    restaurantId: number,
+    imageId: number,
+  ): Promise<Restaurant> {
     const restaurant = await this.restaurant_repository.findOne({
       where: { id: restaurantId },
       relations: ['images'], // Assurez-vous que les images sont chargées
     });
 
     if (!restaurant) {
-      throw new NotFoundException(`Restaurant with ID ${restaurantId} not found.`);
+      throw new NotFoundException(
+        `Restaurant with ID ${restaurantId} not found.`,
+      );
     }
 
     // Trouver l'image à supprimer, en s'assurant qu'elle est bien liée à ce restaurant
-    const imageToRemove = restaurant.images.find(img => img.id === imageId && img.restaurant_id === restaurantId);
+    const imageToRemove = restaurant.images.find(
+      (img) => img.id === imageId && img.restaurant_id === restaurantId,
+    );
     if (!imageToRemove) {
-      throw new NotFoundException(`Image with ID ${imageId} not found for Restaurant ${restaurantId} or not associated.`);
+      throw new NotFoundException(
+        `Image with ID ${imageId} not found for Restaurant ${restaurantId} or not associated.`,
+      );
     }
 
     try {
@@ -413,24 +489,36 @@ export class RestaurantService {
       // Tenter de supprimer le fichier physique
       try {
         await fs.unlink(imageFullPath);
-        this.logger.log(`Image supprimée du système de fichiers: ${imageFullPath}`);
+        this.logger.log(
+          `Image supprimée du système de fichiers: ${imageFullPath}`,
+        );
       } catch (unlinkError) {
-        this.logger.warn(`Impossible de supprimer l'image du système de fichiers: ${imageFullPath}. Erreur: ${unlinkError.message}`);
+        this.logger.warn(
+          `Impossible de supprimer l'image du système de fichiers: ${imageFullPath}. Erreur: ${unlinkError.message}`,
+        );
       }
-      
+
       // Supprimer l'enregistrement de l'image de la base de données
       await this.images_repository.remove(imageToRemove);
-      this.logger.log(`Image supprimée de la base de données. ID: ${imageToRemove.id}`);
+      this.logger.log(
+        `Image supprimée de la base de données. ID: ${imageToRemove.id}`,
+      );
 
       // Gérer la nouvelle image principale si l'image supprimée était la principale
-      const remainingImages = restaurant.images.filter(img => img.id !== imageId);
+      const remainingImages = restaurant.images.filter(
+        (img) => img.id !== imageId,
+      );
       if (imageToRemove.isMain && remainingImages.length > 0) {
         // Trouver la prochaine image principale parmi celles liées au même Restaurant
-        const nextMainImage = remainingImages.find(img => img.restaurant_id === restaurantId);
+        const nextMainImage = remainingImages.find(
+          (img) => img.restaurant_id === restaurantId,
+        );
         if (nextMainImage) {
           nextMainImage.isMain = true;
           await this.images_repository.save(nextMainImage);
-          this.logger.log(`Nouvelle image principale définie pour le Restaurant ${restaurantId}. ID: ${nextMainImage.id}`);
+          this.logger.log(
+            `Nouvelle image principale définie pour le Restaurant ${restaurantId}. ID: ${nextMainImage.id}`,
+          );
         }
       }
 
@@ -439,10 +527,14 @@ export class RestaurantService {
         where: { id: restaurantId },
         relations: ['images'],
       });
-
     } catch (error) {
-      this.logger.error(`Erreur lors de la suppression de l'image pour le Restaurant ${restaurantId}: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Échec de la suppression de l\'image.');
+      this.logger.error(
+        `Erreur lors de la suppression de l'image pour le Restaurant ${restaurantId}: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        "Échec de la suppression de l'image.",
+      );
     }
   }
 }
