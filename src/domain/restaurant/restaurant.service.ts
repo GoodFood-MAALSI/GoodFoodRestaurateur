@@ -289,6 +289,11 @@ export class RestaurantService {
       order: { created_at: 'DESC' },
     });
 
+    // Si aucun restaurant n'est trouvé, retourner un résultat vide
+    if (!restaurants.length) {
+      return { restaurants: [], total: 0 };
+    }
+
     // Fetch review stats for all restaurants in one query
     const reviewStats = await this.clientReviewRestaurantRepository
       .createQueryBuilder('review')
@@ -313,6 +318,7 @@ export class RestaurantService {
 
     return { restaurants: restaurantsWithStats, total };
   }
+  
   async uploadImage(
     restaurantId: number,
     file: Express.Multer.File,
