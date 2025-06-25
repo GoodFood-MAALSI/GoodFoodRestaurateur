@@ -39,12 +39,12 @@ import { Restaurant } from './entities/restaurant.entity';
 
 @Controller('restaurant')
 @ApiTags('Restaurants')
-@ApiBearerAuth()
 export class RestaurantController {
   constructor(private readonly restaurantService: RestaurantService) {}
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Créer un restaurant' })
   @ApiBody({ type: CreateRestaurantDto })
   async create(
@@ -110,6 +110,7 @@ export class RestaurantController {
 
   @Get('/me')
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Récupérer les restaurants créés par l’utilisateur connecté',
   })
@@ -183,6 +184,7 @@ export class RestaurantController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Mettre a jour les informations d'un restaurant" })
   @ApiBody({ type: UpdateRestaurantDto })
   async update(
@@ -217,6 +219,7 @@ export class RestaurantController {
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Supprimer un restaurant' })
   async remove(@Param('id') id: string) {
     try {
