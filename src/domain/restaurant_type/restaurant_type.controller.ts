@@ -7,8 +7,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { RestaurantType } from './entities/restaurant_type.entity';
 
 @Controller('restaurant-type')
-@UseGuards(AuthGuard('jwt'))
-@ApiBearerAuth()
+// @UseGuards(AuthGuard('jwt'))
+// @ApiBearerAuth()
 export class RestaurantTypeController {
   constructor(private readonly restaurant_type_service: RestaurantTypeService) {}
 
