@@ -16,6 +16,21 @@ import { CreateClientReviewRestaurantDto } from './dto/create-client-review-rest
 export class ClientReviewRestaurantController {
   constructor(private readonly ClientReviewRestaurantService: ClientReviewRestaurantService) {}
 
+  @Get(':restaurantId')
+  @ApiOperation({ summary: "Récupérer les avis d'un restaurant spécifique" })
+  @ApiParam({ name: 'restaurantId', description: 'ID du client', type: Number })
+  async getReviewsFromRestaurant(@Param('restaurantId') restaurantId: string) {
+    const id = parseInt(restaurantId);
+    if (isNaN(id)) {
+      throw new HttpException(
+        'restaurantId invalide',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return await this.ClientReviewRestaurantService.findByRestaurant(id);
+  }
+
   @Get(':clientId')
   @ApiOperation({ summary: "Récupérer les avis d'un client spécifique" })
   @ApiParam({ name: 'clientId', description: 'ID du client', type: Number })
