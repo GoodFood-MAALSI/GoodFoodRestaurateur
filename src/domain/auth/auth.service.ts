@@ -8,7 +8,7 @@ import { UsersService } from "src/domain/users/users.service";
 import { AuthEmailLoginDto } from "./dtos/auth-email-login.dto";
 import { LoginResponseType } from "./types/login-response.type";
 import * as crypto from "crypto";
-import { User, UserStatus } from "src/domain/users/entities/user.entity";
+import { User, UserRole, UserStatus } from "src/domain/users/entities/user.entity";
 import { SessionService } from "src/domain/session/session.service";
 import { Session } from "src/domain/session/entities/session.entity";
 import * as ms from "ms";
@@ -80,7 +80,7 @@ export class AuthService {
     const { token, refreshToken, tokenExpires } = await this.getTokensData({
       id: user.id,
       sessionId: session.id,
-      role: 'restaurateur', // Ajout du rôle
+      role: user.role,
     });
 
     return {
@@ -102,6 +102,7 @@ export class AuthService {
       email: registerDto.email,
       status: UserStatus.Inactive,
       hash,
+      role: UserRole.Restaurateur,
     });
 
     await this.mailsService.confirmRegisterUser({
@@ -226,10 +227,12 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
+    const user = await this.usersService.findOneUser({ id: session.user.id });
+
     const { token, refreshToken, tokenExpires } = await this.getTokensData({
       id: session.user.id,
       sessionId: session.id,
-      role: 'restaurateur', // Ajout du rôle
+      role: user.role,
     });
 
     return {
@@ -250,7 +253,7 @@ export class AuthService {
   private async getTokensData(data: {
     id: User["id"];
     sessionId: Session["id"];
-    role: string; // Ajout du rôle
+    role: UserRole;
   }) {
     const tokenExpiresIn = process.env.AUTH_JWT_TOKEN_EXPIRES_IN;
     const refreshExpiresIn = process.env.AUTH_REFRESH_TOKEN_EXPIRES_IN;
@@ -262,7 +265,7 @@ export class AuthService {
         {
           id: data.id,
           sessionId: data.sessionId,
-          role: data.role, // Inclure le rôle dans le token
+          role: data.role,
         },
         {
           secret: process.env.AUTH_JWT_SECRET,

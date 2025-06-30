@@ -19,6 +19,11 @@ import { ApiProperty } from "@nestjs/swagger";
 export enum UserStatus {
   Active = "active",
   Inactive = "inactive",
+  Suspended = "suspended",
+}
+
+export enum UserRole {
+  Restaurateur = "restaurateur",
 }
 
 @Entity()
@@ -77,6 +82,10 @@ export class User extends EntityHelper {
   @ApiProperty()
   @UpdateDateColumn()
   updated_at: Date;
+
+  @ApiProperty({ example: UserRole.Restaurateur })
+  @Column({ type: "enum", enum: UserRole, default: UserRole.Restaurateur })
+  role: UserRole;
 
   @OneToMany(() => Restaurant, (restaurant) => restaurant.user)
   restaurants: Restaurant[];
