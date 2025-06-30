@@ -109,6 +109,10 @@ export class Restaurant {
   @ApiProperty({ example: 4.5, description: 'Note moyenne sur 5' })
   average_rating?: number;
 
-    @OneToMany(() => Images, image => image.restaurant)
+  @OneToMany(() => Images, image => image.restaurant, {
+    cascade: ['insert', 'update'],
+    eager: true,
+    onDelete: 'CASCADE', 
+  })
   images: Images[];
 }
