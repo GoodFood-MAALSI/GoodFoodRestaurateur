@@ -6,8 +6,19 @@ import { ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './domain/utils/filters/http-exception.filter';
 import { ResponseInterceptor } from './domain/utils/interceptors/response.interceptor';
 import { useContainer } from 'class-validator';
-import { join } from 'path'; // Pour joindre les chemins
+import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { runSeeders } from 'typeorm-extension';
+import { DataSource } from 'typeorm';
+import { UserSeeder } from './database/seeders/user.seeder';
+import { RestaurantTypeSeeder } from './database/seeders/restaurant_type.seeder';
+import { RestaurantSeeder } from './database/seeders/restaurant.seeder';
+import { MenuCategorySeeder } from './database/seeders/menu_categories.seeder';
+import { MenuItemSeeder } from './database/seeders/menu_items.seeder';
+import { MenuItemOptionSeeder } from './database/seeders/menu_item_options.seeder';
+import { MenuItemOptionValueSeeder } from './database/seeders/menu_item_option_values.seeder';
+import { ClientReviewRestaurantSeeder } from './database/seeders/client-review-restaurant.seeder';
+import { ImagesSeeder } from './database/seeders/images.seeder';
 
 dotenv.config();
 
@@ -52,11 +63,37 @@ async function bootstrap() {
   SwaggerModule.setup('swagger', app, document);
 
   // Configuration pour servir les fichiers statiques (vos images)
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads', // Les images seront accessibles via /uploads/images/mon-image.jpg
+  app.useStaticAssets(join(__dirname, '..', 'Uploads'), {
+    prefix: '/uploads',
   });
+
+  // Exécuter les seeders en environnement de développement si nécessaire
+  if (process.env.NODE_ENV === 'development' && process.env.RUN_SEEDERS === 'true') {
+    console.log('Running database seeders...');
+    const dataSource = app.get(DataSource);
+    try {
+      await runSeeders(dataSource, {
+        seeds: [
+          UserSeeder,
+          RestaurantTypeSeeder,
+          RestaurantSeeder,
+          MenuCategorySeeder,
+          MenuItemSeeder,
+          MenuItemOptionSeeder,
+          MenuItemOptionValueSeeder,
+          ClientReviewRestaurantSeeder,
+          ImagesSeeder,
+        ],
+      });
+      console.log('Seeders executed successfully.');
+    } catch (error) {
+      console.error('Error running seeders:', error);
+      throw error;
+    }
+  }
 
   // Démarrage du serveur
   await app.listen(process.env.APP_PORT);
 }
+
 bootstrap();
