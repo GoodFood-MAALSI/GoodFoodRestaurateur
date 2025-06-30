@@ -15,6 +15,12 @@ import {
 } from 'typeorm';
 import { Images } from 'src/domain/images/entities/images.entity';
 
+export enum RestaurantStatus {
+  Active = 'active',
+  Inactive = 'inactive',
+  Suspended = 'suspended',
+}
+
 @Entity()
 export class Restaurant {
   @ApiProperty({ example: 1 })
@@ -66,6 +72,10 @@ export class Restaurant {
   @ApiProperty({ example: true })
   @Column()
   is_open: boolean;
+
+  @ApiProperty({ example: RestaurantStatus.Active })
+  @Column({ type: 'enum', enum: RestaurantStatus, default: RestaurantStatus.Active })
+  status: RestaurantStatus;
 
   @ApiProperty({ example: 16.0 })
   @Column({ type: 'decimal', precision: 15, scale: 8, default: 0 })

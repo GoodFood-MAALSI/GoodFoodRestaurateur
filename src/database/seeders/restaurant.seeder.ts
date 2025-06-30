@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { Seeder } from 'typeorm-extension';
-import { Restaurant } from '../../domain/restaurant/entities/restaurant.entity';
+import { Restaurant, RestaurantStatus } from '../../domain/restaurant/entities/restaurant.entity';
 import { User } from '../../domain/users/entities/user.entity';
 import { RestaurantType } from '../../domain/restaurant_type/entities/restaurant_type.entity';
 
@@ -31,6 +31,7 @@ export class RestaurantSeeder implements Seeder {
         phone_number: '33320543952',
         siret: '12345678900011',
         is_open: true,
+        status: RestaurantStatus.Active,
         long: 3.0628,
         lat: 50.6359,
         userId: 1,
@@ -49,6 +50,7 @@ export class RestaurantSeeder implements Seeder {
         phone_number: '33320550606',
         siret: '12345678900012',
         is_open: true,
+        status: RestaurantStatus.Active,
         long: 3.0612,
         lat: 50.6385,
         userId: 2,
@@ -67,6 +69,7 @@ export class RestaurantSeeder implements Seeder {
         phone_number: '33320540525',
         siret: '12345678900013',
         is_open: true,
+        status: RestaurantStatus.Active,
         long: 3.0609,
         lat: 50.6382,
         userId: 3,
@@ -85,6 +88,7 @@ export class RestaurantSeeder implements Seeder {
         phone_number: '33320310637',
         siret: '12345678900014',
         is_open: true,
+        status: RestaurantStatus.Active,
         long: 3.0598,
         lat: 50.6371,
         userId: 4,
@@ -103,6 +107,7 @@ export class RestaurantSeeder implements Seeder {
         phone_number: '33320551234',
         siret: '12345678900015',
         is_open: true,
+        status: RestaurantStatus.Active,
         long: 3.0595,
         lat: 50.6373,
         userId: 5,
@@ -121,6 +126,7 @@ export class RestaurantSeeder implements Seeder {
         phone_number: '33320551319',
         siret: '12345678900016',
         is_open: true,
+        status: RestaurantStatus.Active,
         long: 3.0615,
         lat: 50.6390,
         userId: 6,
@@ -139,6 +145,7 @@ export class RestaurantSeeder implements Seeder {
         phone_number: '33359363559',
         siret: '12345678900017',
         is_open: true,
+        status: RestaurantStatus.Active,
         long: 3.0602,
         lat: 50.6388,
         userId: 7, 
@@ -157,6 +164,7 @@ export class RestaurantSeeder implements Seeder {
         phone_number: '33320551179',
         siret: '12345678900018',
         is_open: true,
+        status: RestaurantStatus.Active,
         long: 3.0597,
         lat: 50.6370,
         userId: 8,
@@ -175,6 +183,7 @@ export class RestaurantSeeder implements Seeder {
         phone_number: '33320574256',
         siret: '12345678900019',
         is_open: true,
+        status: RestaurantStatus.Active,
         long: 3.0610,
         lat: 50.6380,
         userId: 9,
@@ -193,6 +202,7 @@ export class RestaurantSeeder implements Seeder {
         phone_number: '33320551234',
         siret: '12345678900020',
         is_open: true,
+        status: RestaurantStatus.Active,
         long: 3.0645,
         lat: 50.6335,
         userId: 10,
@@ -214,6 +224,7 @@ export class RestaurantSeeder implements Seeder {
       restaurant.phone_number = restaurantData.phone_number;
       restaurant.siret = restaurantData.siret;
       restaurant.is_open = restaurantData.is_open;
+      restaurant.status = restaurantData.status;
       restaurant.long = restaurantData.long;
       restaurant.lat = restaurantData.lat;
       restaurant.userId = restaurantData.userId;

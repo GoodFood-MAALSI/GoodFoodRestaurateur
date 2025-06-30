@@ -4,6 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { OrNeverType } from '../../utils/types/or-never.type';
 import { JwtPayloadType } from './types/jwt-payload.type';
 import { UsersService } from '../../users/users.service';
+import { UserStatus } from '../../users/entities/user.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -15,7 +16,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload: JwtPayloadType): Promise<OrNeverType<JwtPayloadType>> {
+  async validate(
+    payload: JwtPayloadType,
+  ): Promise<OrNeverType<JwtPayloadType>> {
     if (!payload.id) {
       throw new UnauthorizedException('Invalid token payload');
     }
@@ -23,6 +26,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     const user = await this.usersService.findOneUser({ id: payload.id });
     if (!user) {
       throw new UnauthorizedException('User no longer exists');
+    }
+
+    if (user.status === UserStatus.Suspended) {
+      throw new UnauthorizedException('Votre compte a été suspendu. Veuillez contacter le support.');
     }
 
     return payload;

@@ -23,6 +23,7 @@ import { User as UserDecorator } from './decorators/user.decorator';
 import { User } from './entities/user.entity';
 import * as jwt from 'jsonwebtoken';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserStatus } from './entities/user.entity';
 
 @ApiTags('Users')
 @Controller('users')
@@ -150,6 +151,60 @@ export class UsersController {
     return this.usersService.deleteUser(userId);
   }
 
+  @Patch(':id/suspend')
+  @ApiOperation({ summary: 'Suspendre un utilisateur et ses restaurants' })
+  @ApiResponse({ status: 200, description: 'Utilisateur et restaurants suspendus avec succès' })
+  @ApiResponse({ status: 403, description: 'Accès interdit' })
+  @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
+  @ApiResponse({ status: 400, description: 'Utilisateur déjà suspendu' })
+  async suspend(
+    @Param('id') id: string
+  ): Promise<{ message: string }> {
+    const userId = +id;
+
+    const user = await this.usersService.findOneUser({ id: userId });
+    if (!user) {
+      throw new HttpException('Utilisateur non trouvé', HttpStatus.NOT_FOUND);
+    }
+
+    if (user.status === UserStatus.Suspended) {
+      throw new HttpException(
+        'L\'utilisateur est déjà suspendu',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.usersService.suspendUser(userId);
+    return { message: 'Utilisateur et restaurants suspendus avec succès' };
+  }
+
+  @Patch(':id/restore')
+  @ApiOperation({ summary: 'Réactiver un utilisateur et ses restaurants' })
+  @ApiResponse({ status: 200, description: 'Utilisateur et restaurants réactivés avec succès' })
+  @ApiResponse({ status: 403, description: 'Accès interdit' })
+  @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
+  @ApiResponse({ status: 400, description: 'Utilisateur non suspendu' })
+  async restore(
+    @Param('id') id: string
+  ): Promise<{ message: string }> {
+    const userId = +id;
+
+    const user = await this.usersService.findOneUser({ id: userId });
+    if (!user) {
+      throw new HttpException('Utilisateur non trouvé', HttpStatus.NOT_FOUND);
+    }
+
+    if (user.status !== UserStatus.Suspended) {
+      throw new HttpException(
+        'L\'utilisateur n\'est pas suspendu',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.usersService.restoreUser(userId);
+    return { message: 'Utilisateur et restaurants réactivés avec succès' };
+  }
+
   @Get('/verify/:userId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
@@ -159,15 +214,12 @@ export class UsersController {
   @ApiResponse({ status: 403, description: 'Rôle invalide' })
   @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
   async verifyRestaurateur(@Param('userId') userId: string, @Request() req) {
-
-    // Récupérer le token depuis l'en-tête Authorization
     const token = req.headers['authorization']?.split(' ')[1];
     if (!token) {
       throw new HttpException('Token manquant', HttpStatus.UNAUTHORIZED);
     }
 
     try {
-      // Valider le token avec la clé secrète
       let decoded: any = null;
       const secret = process.env.AUTH_JWT_SECRET;
       decoded = jwt.verify(token, secret);

@@ -49,11 +49,21 @@ export class AuthService {
       );
     }
 
-    if (user.status === "inactive") {
+    if (user.status === UserStatus.Inactive) {
       throw new HttpException(
         {
           status: HttpStatus.FORBIDDEN,
           error: "L'adresse email de l'utilisateur doit être vérifié",
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    if (user.status === UserStatus.Suspended) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: "Votre compte a été suspendu. Veuillez contacter le support.",
         },
         HttpStatus.FORBIDDEN,
       );
@@ -161,6 +171,16 @@ export class AuthService {
       );
     }
 
+    if (user.status === UserStatus.Suspended) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: "Votre compte a été suspendu. Veuillez contacter le support.",
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
     const hash = crypto
       .createHash("sha256")
       .update(randomStringGenerator())
@@ -201,6 +221,16 @@ export class AuthService {
     }
 
     const user = forgotReq.user;
+    if (user.status === UserStatus.Suspended) {
+      throw new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: "Votre compte a été suspendu. Veuillez contacter le support.",
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
     user.password = password;
 
     await this.sessionService.delete({
@@ -224,10 +254,17 @@ export class AuthService {
     });
 
     if (!session) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Session invalide ou expirée');
     }
 
     const user = await this.usersService.findOneUser({ id: session.user.id });
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur non trouvé');
+    }
+
+    if (user.status === UserStatus.Suspended) {
+      throw new UnauthorizedException('Votre compte a été suspendu. Veuillez contacter le support.');
+    }
 
     const { token, refreshToken, tokenExpires } = await this.getTokensData({
       id: session.user.id,
