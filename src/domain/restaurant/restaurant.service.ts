@@ -96,7 +96,7 @@ export class RestaurantService {
     try {
       const allRestaurants = await this.restaurant_repository.find({
         where,
-        relations: ['restaurantType'],
+        relations: ['restaurantType','images'],
       });
 
       const reviewStats = await this.clientReviewRestaurantRepository
