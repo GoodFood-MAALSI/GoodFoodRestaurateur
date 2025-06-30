@@ -1,10 +1,6 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
 
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('Entities path:', process.env.NODE_ENV === 'production' ? 'dist/domain/**/*.entity.js' : 'src/domain/**/*.entity{.ts,.js}');
-console.log('Migrations path:', process.env.NODE_ENV === 'production' ? 'dist/database/migrations/*.js' : 'src/database/migrations/*{.ts,.js}');
-
 export const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DATABASE_HOST,

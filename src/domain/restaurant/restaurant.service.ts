@@ -20,8 +20,8 @@ import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.e
 import { MenuItemOptionValue } from '../menu_item_option_values/entities/menu_item_option_value.entity';
 import { ClientReviewRestaurant } from '../client-review-restaurant/entities/client-review-restaurant.entity';
 import { StringUtils } from './string-utils.service';
-import * as sharp from 'sharp'; 
-import * as fs from 'fs/promises'; 
+import * as sharp from 'sharp';
+import * as fs from 'fs/promises';
 import { Images } from '../images/entities/images.entity';
 import { join } from 'path';
 
@@ -110,6 +110,7 @@ export class RestaurantService {
         .groupBy('review.restaurantId')
         .getRawMany();
 
+      // Map review stats to restaurants
       const restaurantsWithStats = allRestaurants.map((restaurant) => {
         const stats = reviewStats.find(
           (s) => s.restaurantId === restaurant.id,
@@ -307,7 +308,7 @@ export class RestaurantService {
     let processedFilePathFull: string;
 
     try {
-      const existingImage = restaurant.images.find(img => img.isMain);
+      const existingImage = restaurant.images.find(img => img.isMain); 
 
       if (existingImage) {
         this.logger.log(`Image existante trouvée pour le restaurant ${restaurantId}. ID: ${existingImage.id}, Chemin: ${existingImage.path}`);
@@ -329,32 +330,28 @@ export class RestaurantService {
       const processedFilePathFull = join(file.destination, newFileName); 
       const relativePathForDb = join('images', newFileName); 
 
-
       await sharp(file.path)
         .resize(800) 
         .webp({ quality: 80 }) 
         .toFile(processedFilePathFull);
 
-     
       await fs.unlink(file.path).catch(e => this.logger.error(`Erreur lors de la suppression du fichier original temporaire: ${file.path}`, e.stack));
-
 
       const newImage = this.images_repository.create({
         filename: newFileName, 
-        path: relativePathForDb, 
+        path: relativePathForDb,
         mimetype: 'image/webp', 
         size: (await fs.stat(processedFilePathFull)).size, 
         restaurant: restaurant,          
-        restaurant_id: restaurant.id,    
-        menu_item: null,                 
-        menu_item_id: null,              
+        restaurant_id: restaurant.id,   
+        menu_item: null,                
+        menu_item_id: null,             
         entityType: 'restaurant',        
         isMain: true,
       });
 
       await this.images_repository.save(newImage);
       this.logger.log(`Nouvelle image enregistrée pour le restaurant ${restaurantId}. Nom: ${newFileName}`);
-
       return await this.restaurant_repository.findOne({
         where: { id: restaurantId },
         relations: ['images'],
@@ -362,12 +359,9 @@ export class RestaurantService {
 
     } catch (error) {
       this.logger.error(`Erreur lors du traitement ou de l'enregistrement de l'image pour le restaurant ${restaurantId}: ${error.message}`, error.stack);
-
       if (file && file.path) {
-
         await fs.unlink(file.path).catch(e => this.logger.error(`Erreur lors de la suppression du fichier temporaire en cas d'erreur globale: ${file.path}`, e.stack));
       }
-
       if (processedFilePathFull && (await fs.stat(processedFilePathFull).catch(() => null))) { 
          await fs.unlink(processedFilePathFull).catch(e => this.logger.error(`Erreur lors de la suppression du fichier traité en cas d'erreur globale: ${processedFilePathFull}`, e.stack));
       }
@@ -379,7 +373,7 @@ export class RestaurantService {
    async removeImage(restaurantId: number, imageId: number): Promise<Restaurant> {
     const restaurant = await this.restaurant_repository.findOne({
       where: { id: restaurantId },
-      relations: ['images'],
+      relations: ['images'], 
     });
 
     if (!restaurant) {
@@ -393,7 +387,6 @@ export class RestaurantService {
 
     try {
       const imageFullPath = join('./uploads', imageToRemove.path);
-
 
       try {
         await fs.unlink(imageFullPath);

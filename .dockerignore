@@ -8,3 +8,4 @@ npm-debug.log
 sonar-project.properties
 docker-compose.yaml
 tsconfig.build.tsbuildinfo
+uploads/images

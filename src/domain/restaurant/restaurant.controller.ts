@@ -10,7 +10,12 @@ import {
   UseGuards,
   Req,
   HttpException,
-  HttpStatus,UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator
+  HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { RestaurantService } from './restaurant.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
@@ -19,8 +24,8 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
-   ApiConsumes,
-   ApiParam,
+  ApiConsumes,
+  ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
@@ -34,12 +39,12 @@ import { Restaurant } from './entities/restaurant.entity';
 
 @Controller('restaurant')
 @ApiTags('Restaurants')
-@ApiBearerAuth()
 export class RestaurantController {
   constructor(private readonly restaurantService: RestaurantService) {}
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Créer un restaurant' })
   @ApiBody({ type: CreateRestaurantDto })
   async create(
@@ -74,77 +79,16 @@ export class RestaurantController {
 
   @Get()
   @ApiOperation({ summary: 'Récupérer la liste de tous les restaurants' })
-  @ApiQuery({
-    name: 'name',
-    required: false,
-    type: String,
-    description: 'Filtrer par nom',
-  })
-  @ApiQuery({
-    name: 'is_open',
-    required: false,
-    type: Boolean,
-    description: "Filtrer par état d'ouverture",
-  })
-  @ApiQuery({
-    name: 'city',
-    required: false,
-    type: String,
-    description: 'Filtrer par ville',
-  })
-  @ApiQuery({
-    name: 'restaurant_type',
-    required: false,
-    type: Number,
-    description: 'Filtrer par type de restaurant',
-  })
-  @ApiQuery({
-    name: 'lat',
-    required: false,
-    type: Number,
-    description: 'Latitude du point de recherche',
-    example: 50.6335,
-  })
-  @ApiQuery({
-    name: 'long',
-    required: false,
-    type: Number,
-    description: 'Longitude du point de recherche',
-    example: 3.0645,
-  })
-  @ApiQuery({
-    name: 'perimeter',
-    required: false,
-    type: Number,
-    description: 'Périmètre en mètres autour du point',
-    example: 1000,
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Numéro de page',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Nombre maximum d’items par page',
-    example: 10,
-  })
-  async findAll(
-    @Query() filters: RestaurantFilterDto,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-    @Req() req: Request,
-  ) {
+  async findAll(@Query() filters: RestaurantFilterDto, @Req() req: Request) {
     try {
+      const { page = 1, limit = 10 } = filters;
+
       const { restaurants, total } = await this.restaurantService.findAll(
         filters,
         page,
         limit,
       );
+
       const { links, meta } = Pagination.generatePaginationMetadata(
         req,
         page,
@@ -166,6 +110,7 @@ export class RestaurantController {
 
   @Get('/me')
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Récupérer les restaurants créés par l’utilisateur connecté',
   })
@@ -239,6 +184,7 @@ export class RestaurantController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Mettre a jour les informations d'un restaurant" })
   @ApiBody({ type: UpdateRestaurantDto })
   async update(
@@ -273,6 +219,7 @@ export class RestaurantController {
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Supprimer un restaurant' })
   async remove(@Param('id') id: string) {
     try {
@@ -291,15 +238,17 @@ export class RestaurantController {
       );
     }
   }
-   @Post(':id/upload-image')
+  @Post(':id/upload-image')
   @ApiOperation({ summary: 'Uploader une image pour un restaurant spécifique' }) // Description pour Swagger
   @ApiParam({ name: 'id', description: 'ID du restaurant', type: Number }) // Description du paramètre d'URL
   @ApiConsumes('multipart/form-data') // Indique que le type de contenu est multipart/form-data
-  @ApiBody({ // Décrit le corps de la requête pour l'upload de fichier
+  @ApiBody({
+    // Décrit le corps de la requête pour l'upload de fichier
     schema: {
       type: 'object',
       properties: {
-        image: { // 'image' doit correspondre au nom du champ dans FileInterceptor
+        image: {
+          // 'image' doit correspondre au nom du champ dans FileInterceptor
           type: 'string',
           format: 'binary', // Indique à Swagger qu'il s'agit d'un fichier binaire
           description: 'Fichier image à uploader (JPEG, PNG, GIF, max 5MB)',
@@ -332,7 +281,7 @@ export class RestaurantController {
     return this.restaurantService.uploadImage(restaurantId, file);
   }
 
-    // Si vous avez besoin de supprimer une image spécifique
+  // Si vous avez besoin de supprimer une image spécifique
   @Patch(':restaurantId/remove-image/:imageId')
   async removeRestaurantImage(
     @Param('restaurantId') restaurantId: number,
@@ -347,4 +296,3 @@ export class RestaurantController {
   //   return res.sendFile(filename, { root: './uploads/images' });
   // }
 }
-

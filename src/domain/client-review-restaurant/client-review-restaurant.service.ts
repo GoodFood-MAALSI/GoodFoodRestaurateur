@@ -41,4 +41,10 @@ export class ClientReviewRestaurantService {
       relations: ['restaurant'],
     });
   }
+
+  async findByRestaurant(restaurantId: number): Promise<ClientReviewRestaurant[]> {
+    return await this.clientReviewRestaurantRepository.find({
+      where: { restaurantId },
+    });
+  }
 }

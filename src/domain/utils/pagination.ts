@@ -7,18 +7,22 @@ export class Pagination {
     totalItems: number,
     itemsPerPage: number,
   ) {
-    const url = request.url;
+    // Construire l'URL de base avec le protocole et le domaine
+    const baseUrl = `${request.protocol}://${request.get('host')}`;
+    // Utiliser req.path pour éviter d'inclure les query parameters existants
+    const path = request.path;
+
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const links = {
-      self: `${url}?page=${currentPage}&limit=${itemsPerPage}`,
+      self: `${baseUrl}${path}?page=${currentPage}&limit=${itemsPerPage}`,
     };
     if (currentPage < totalPages) {
-      links['next'] = `${url}?page=${currentPage + 1}&limit=${itemsPerPage}`;
+      links['next'] = `${baseUrl}${path}?page=${currentPage + 1}&limit=${itemsPerPage}`;
     }
     if (currentPage > 1) {
-      links['prev'] = `${url}?page=${currentPage - 1}&limit=${itemsPerPage}`;
+      links['prev'] = `${baseUrl}${path}?page=${currentPage - 1}&limit=${itemsPerPage}`;
     }
-    links['last'] = `${url}?page=${totalPages}&limit=${itemsPerPage}`;
+    links['last'] = `${baseUrl}${path}?page=${totalPages}&limit=${itemsPerPage}`;
     const meta = {
       totalItems,
       currentPage,

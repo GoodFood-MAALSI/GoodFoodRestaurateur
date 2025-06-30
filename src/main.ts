@@ -14,7 +14,7 @@ dotenv.config();
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-    useContainer(app.select(AppModule), { fallbackOnErrors: true });
+  useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const allowedOrigins = ['http://localhost:4002', 'http://localhost:8080'];
 
   // Activer CORS avec les bonnes options
@@ -31,6 +31,7 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       forbidUnknownValues: false,
+      forbidNonWhitelisted: true,
     }),
   );
 
@@ -43,7 +44,6 @@ async function bootstrap() {
     .setTitle('API Documentation')
     .setDescription("Documentation de l'API NestJS avec Swagger")
     .setVersion('1.0')
-    .addTag('App', "Point d'entrée de l'api")
     .addServer(process.env.BACKEND_DOMAIN, 'Local dev')
     .addBearerAuth()
     .build();
@@ -51,7 +51,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document);
 
-    // Configuration pour servir les fichiers statiques (vos images)
+  // Configuration pour servir les fichiers statiques (vos images)
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads', // Les images seront accessibles via /uploads/images/mon-image.jpg
   });
