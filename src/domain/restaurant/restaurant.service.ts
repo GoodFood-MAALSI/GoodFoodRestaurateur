@@ -161,6 +161,7 @@ export class RestaurantService {
     const restaurant = await this.restaurant_repository.findOne({
       where: { id },
       relations: [
+        'images',
         'restaurantType',
         'user',
         'menuCategories',
@@ -263,7 +264,7 @@ export class RestaurantService {
   ): Promise<{ restaurants: Restaurant[]; total: number }> {
     const [restaurants, total] = await this.restaurant_repository.findAndCount({
       where: { userId },
-      relations: ['restaurantType'],
+      relations: ['restaurantType','images'],
       skip: (page - 1) * limit,
       take: limit,
       order: { created_at: 'DESC' },

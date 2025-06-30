@@ -26,7 +26,7 @@ export class Images {
     nullable: true, 
     onDelete: 'CASCADE'
   })
-  @JoinColumn({ name: 'restaurantId' })
+  @JoinColumn({ name: 'restaurant_id' })
   restaurant: Restaurant;
 
   @Column({ nullable: true }) 
