@@ -26,7 +26,11 @@ export class Images {
     nullable: true, 
     onDelete: 'CASCADE'
   })
-  @JoinColumn({ name: 'restaurant_id' })
+  @JoinColumn({ name: 'restaurantId' })
+  restaurant: Restaurant;
+
+    @ManyToOne(() => Restaurant, (restaurant) => restaurant.images)
+  @JoinColumn({ name: 'restaurantId' })
   restaurant: Restaurant;
 
   @Column({ nullable: true }) 
