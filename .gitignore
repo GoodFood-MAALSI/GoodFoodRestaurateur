@@ -56,6 +56,7 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 tsconfig.build.tsbuildinfo
-uploads/images/*
-!uploads/images/default/
-!uploads/images/default/**
+
+uploads/**
+!uploads/default/
+!uploads/default/**

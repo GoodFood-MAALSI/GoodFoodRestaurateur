@@ -8,6 +8,6 @@ npm-debug.log
 sonar-project.properties
 docker-compose.yaml
 tsconfig.build.tsbuildinfo
-uploads/images/*
-!uploads/images/default/
-!uploads/images/default/**
+uploads/**
+!uploads/default/
+!uploads/default/**

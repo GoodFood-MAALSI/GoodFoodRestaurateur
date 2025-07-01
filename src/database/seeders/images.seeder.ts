@@ -19,7 +19,7 @@ export class ImagesSeeder implements Seeder {
       {
         id: 1,
         filename: 'image-restaurant-1.jpg',
-        path: '/uploads/images/default/image-restaurant-1.jpg',
+        path: '/uploads/default/image-restaurant-1.jpg',
         mimetype: 'image/jpeg',
         size: 240624,
         isMain: true,
@@ -32,7 +32,7 @@ export class ImagesSeeder implements Seeder {
       {
         id: 2,
         filename: 'image-restaurant-2.jpg',
-        path: '/uploads/images/default/image-restaurant-2.jpg',
+        path: '/uploads/default/image-restaurant-2.jpg',
         mimetype: 'image/jpeg',
         size: 8288340,
         isMain: true,
@@ -45,7 +45,7 @@ export class ImagesSeeder implements Seeder {
       {
         id: 3,
         filename: 'image-restaurant-3.jpg',
-        path: '/uploads/images/default/image-restaurant-3.jpg',
+        path: '/uploads/default/image-restaurant-3.jpg',
         mimetype: 'image/jpeg',
         size: 916668,
         isMain: true,
@@ -58,7 +58,7 @@ export class ImagesSeeder implements Seeder {
       {
         id: 4,
         filename: 'image-restaurant-4.jpg',
-        path: '/uploads/images/default/image-restaurant-4.jpg',
+        path: '/uploads/default/image-restaurant-4.jpg',
         mimetype: 'image/jpeg',
         size: 1369641,
         isMain: true,
@@ -71,7 +71,7 @@ export class ImagesSeeder implements Seeder {
       {
         id: 5,
         filename: 'image-restaurant-5.jpg',
-        path: '/uploads/images/default/image-restaurant-5.jpg',
+        path: '/uploads/default/image-restaurant-5.jpg',
         mimetype: 'image/jpeg',
         size: 117936,
         isMain: true,
@@ -84,7 +84,7 @@ export class ImagesSeeder implements Seeder {
       {
         id: 6,
         filename: 'image-restaurant-6.jpg',
-        path: '/uploads/images/default/image-restaurant-6.jpg',
+        path: '/uploads/default/image-restaurant-6.jpg',
         mimetype: 'image/jpeg',
         size: 2214908,
         isMain: true,
@@ -97,7 +97,7 @@ export class ImagesSeeder implements Seeder {
       {
         id: 7,
         filename: 'image-restaurant-7.jpg',
-        path: '/uploads/images/default/image-restaurant-7.jpg',
+        path: '/uploads/default/image-restaurant-7.jpg',
         mimetype: 'image/jpeg',
         size: 3714462,
         isMain: true,
@@ -110,7 +110,7 @@ export class ImagesSeeder implements Seeder {
       {
         id: 8,
         filename: 'image-restaurant-8.jpg',
-        path: '/uploads/images/default/image-restaurant-8.jpg',
+        path: '/uploads/default/image-restaurant-8.jpg',
         mimetype: 'image/jpeg',
         size: 1531767,
         isMain: true,
@@ -123,7 +123,7 @@ export class ImagesSeeder implements Seeder {
       {
         id: 9,
         filename: 'image-restaurant-9.jpg',
-        path: '/uploads/images/default/image-restaurant-9.jpg',
+        path: '/uploads/default/image-restaurant-9.jpg',
         mimetype: 'image/jpeg',
         size: 1963542,
         isMain: true,
@@ -136,7 +136,7 @@ export class ImagesSeeder implements Seeder {
       {
         id: 10,
         filename: 'image-restaurant-10.jpg',
-        path: '/uploads/images/default/image-restaurant-10.jpg',
+        path: '/uploads/default/image-restaurant-10.jpg',
         mimetype: 'image/jpeg',
         size: 4003310,
         isMain: true,
