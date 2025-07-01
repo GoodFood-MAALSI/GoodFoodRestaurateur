@@ -3,7 +3,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import * as fs from 'fs'; 
 
-const uploadPath = './src/uploads'; 
+const uploadPath = './uploads'; 
 
 
 if (!fs.existsSync(uploadPath)) {
