@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
 import { Restaurant } from 'src/domain/restaurant/entities/restaurant.entity';
 import { MenuItem } from 'src/domain/menu_items/entities/menu_item.entity';
 
@@ -45,4 +45,7 @@ export class Images {
 
   @Column({ type: 'varchar', nullable: true }) 
   entityType: string;
+
+  @CreateDateColumn()
+  created_at: Date;
 }
