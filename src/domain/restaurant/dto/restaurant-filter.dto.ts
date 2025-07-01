@@ -6,10 +6,12 @@ import {
   IsString,
   IsNumber,
   IsInt,
+  IsEnum,
 } from 'class-validator';
 import { IsEntityExists } from '../../utils/validators/is-entity-exists.validator';
 import { RestaurantType } from 'src/domain/restaurant_type/entities/restaurant_type.entity';
 import { AreFieldsRequiredTogether } from 'src/domain/utils/validators/are-required-together.validator';
+import { RestaurantStatus } from 'src/domain/restaurant/entities/restaurant.entity';
 
 @AreFieldsRequiredTogether(['lat', 'long', 'perimeter'], {
   message:
@@ -37,6 +39,15 @@ export class RestaurantFilterDto {
     return value;
   })
   is_open?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Filtrer par statut du restaurant',
+    example: RestaurantStatus.Active,
+    enum: RestaurantStatus,
+  })
+  @IsOptional()
+  @IsEnum(RestaurantStatus)
+  status?: RestaurantStatus;
 
   @ApiPropertyOptional({
     description: 'Filtrer par ville',

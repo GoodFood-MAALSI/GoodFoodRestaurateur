@@ -1,4 +1,4 @@
-import { User, UserStatus } from '../../domain/users/entities/user.entity';
+import { User, UserRole, UserStatus } from '../../domain/users/entities/user.entity';
 import { DataSource } from 'typeorm';
 import { Seeder } from 'typeorm-extension';
 
@@ -13,7 +13,8 @@ export class UserSeeder implements Seeder {
         password: 'Antoine123!',
         status: UserStatus.Active,
         first_name: 'Antoine',
-        last_name: 'Griezmann'
+        last_name: 'Griezmann',
+        role: UserRole.Restaurateur,
       },
       {
         id: 2,
@@ -21,7 +22,8 @@ export class UserSeeder implements Seeder {
         password: 'Paul123!',
         status: UserStatus.Active,
         first_name: 'Paul',
-        last_name: 'Pogba'
+        last_name: 'Pogba',
+        role: UserRole.Restaurateur,
       },
       {
         id: 3,
@@ -29,7 +31,8 @@ export class UserSeeder implements Seeder {
         password: 'Kylian123!',
         status: UserStatus.Active,
         first_name: 'Kylian',
-        last_name: 'Mbappé'
+        last_name: 'Mbappé',
+        role: UserRole.Restaurateur,
       },
       {
         id: 4,
@@ -37,7 +40,8 @@ export class UserSeeder implements Seeder {
         password: 'Ngolo123!',
         status: UserStatus.Active,
         first_name: 'N\'Golo',
-        last_name: 'Kanté'
+        last_name: 'Kanté',
+        role: UserRole.Restaurateur,
       },
       {
         id: 5,
@@ -45,7 +49,8 @@ export class UserSeeder implements Seeder {
         password: 'Olivier123!',
         status: UserStatus.Active,
         first_name: 'Olivier',
-        last_name: 'Giroud'
+        last_name: 'Giroud',
+        role: UserRole.Restaurateur,
       },
       {
         id: 6,
@@ -53,7 +58,8 @@ export class UserSeeder implements Seeder {
         password: 'Hugo123!',
         status: UserStatus.Active,
         first_name: 'Hugo',
-        last_name: 'Lloris'
+        last_name: 'Lloris',
+        role: UserRole.Restaurateur,
       },
       {
         id: 7,
@@ -61,7 +67,8 @@ export class UserSeeder implements Seeder {
         password: 'Raphael123!',
         status: UserStatus.Active,
         first_name: 'Raphaël',
-        last_name: 'Varane'
+        last_name: 'Varane',
+        role: UserRole.Restaurateur,
       },
       {
         id: 8,
@@ -69,7 +76,8 @@ export class UserSeeder implements Seeder {
         password: 'Ousmane123!',
         status: UserStatus.Active,
         first_name: 'Ousmane',
-        last_name: 'Dembélé'
+        last_name: 'Dembélé',
+        role: UserRole.Restaurateur,
       },
       {
         id: 9,
@@ -77,7 +85,8 @@ export class UserSeeder implements Seeder {
         password: 'Benjamin123!',
         status: UserStatus.Active,
         first_name: 'Benjamin',
-        last_name: 'Pavard'
+        last_name: 'Pavard',
+        role: UserRole.Restaurateur,
       },
       {
         id: 10,
@@ -85,7 +94,8 @@ export class UserSeeder implements Seeder {
         password: 'Theo123!',
         status: UserStatus.Active,
         first_name: 'Theo',
-        last_name: 'Hernandez'
+        last_name: 'Hernandez',
+        role: UserRole.Restaurateur,
       }
     ];
 
@@ -97,6 +107,7 @@ export class UserSeeder implements Seeder {
       user.status = userData.status;
       user.first_name = userData.first_name;
       user.last_name = userData.last_name;
+      user.role = userData.role;
 
       await repo.save(user, { data: { id: userData.id } });
     }

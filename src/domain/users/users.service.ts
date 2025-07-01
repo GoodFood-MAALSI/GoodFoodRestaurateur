@@ -1,12 +1,12 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { User, UserStatus } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Session } from '../session/entities/session.entity';
 import { EntityCondition } from '../utils/types/entity-condition.type';
 import { NullableType } from '../utils/types/nullable.type';
-import { Restaurant } from '../restaurant/entities/restaurant.entity';
+import { Restaurant, RestaurantStatus } from '../restaurant/entities/restaurant.entity';
 
 @Injectable()
 export class UsersService {
@@ -54,6 +54,38 @@ export class UsersService {
     await this.usersRepository.delete(id);
 
     return { message: 'L\'utilisateur a été supprimé avec succès' };
+  }
+
+  async suspendUser(id: User['id']): Promise<void> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new HttpException('Utilisateur non trouvé', HttpStatus.NOT_FOUND);
+    }
+
+    // Mettre à jour le statut de l'utilisateur
+    await this.usersRepository.update(id, { status: UserStatus.Suspended });
+
+    // Suspendre tous les restaurants associés
+    await this.restaurantRepository.update(
+      { user: { id } },
+      { status: RestaurantStatus.Suspended },
+    );
+  }
+
+  async restoreUser(id: User['id']): Promise<void> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new HttpException('Utilisateur non trouvé', HttpStatus.NOT_FOUND);
+    }
+
+    // Réactiver l'utilisateur
+    await this.usersRepository.update(id, { status: UserStatus.Active });
+
+    // Réactiver tous les restaurants associés
+    await this.restaurantRepository.update(
+      { user: { id } },
+      { status: RestaurantStatus.Active },
+    );
   }
 
   async saveUser(user: User): Promise<User> {
