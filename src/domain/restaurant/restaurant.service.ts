@@ -398,7 +398,7 @@ export class RestaurantService {
         this.logger.log(
           `Image existante trouvée pour le restaurant ${restaurantId}. ID: ${existingImage.id}, Chemin: ${existingImage.path}`,
         );
-        const oldFilePath = join('./uploads', existingImage.path);
+        const oldFilePath = join('./', existingImage.path);
 
         try {
           await fs.unlink(oldFilePath);
@@ -524,7 +524,7 @@ export class RestaurantService {
     }
 
     try {
-      const imageFullPath = join('./uploads', imageToRemove.path);
+      const imageFullPath = join('./', imageToRemove.path);
 
       try {
         await fs.unlink(imageFullPath);

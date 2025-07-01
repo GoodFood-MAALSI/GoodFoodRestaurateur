@@ -115,7 +115,7 @@ export class MenuItemsService {
 
     if (existingMainImage) {
       this.logger.log(`Image existante trouvée pour le menuItem ${menuItemId}. ID: ${existingMainImage.id}, Chemin: ${existingMainImage.path}`);
-      const oldFilePath = join('./uploads', existingMainImage.path);
+      const oldFilePath = join('./', existingMainImage.path);
       
       try {
         await fs.unlink(oldFilePath);
@@ -201,7 +201,7 @@ async removeImage(menuItemId: number, imageId: number): Promise<MenuItem> {
     }
 
     try {
-      const imageFullPath = join('./uploads', imageToRemove.path);
+      const imageFullPath = join('./', imageToRemove.path);
       
       // Tenter de supprimer le fichier physique
       try {
