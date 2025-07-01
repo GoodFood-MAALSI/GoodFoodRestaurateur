@@ -14,33 +14,33 @@ import { CreateClientReviewRestaurantDto } from './dto/create-client-review-rest
 
 @Controller('client-review-restaurant')
 export class ClientReviewRestaurantController {
-  constructor(private readonly ClientReviewRestaurantService: ClientReviewRestaurantService) {}
+  constructor(
+    private readonly ClientReviewRestaurantService: ClientReviewRestaurantService,
+  ) {}
 
-  @Get(':restaurantId')
+  @Get('restaurant/:restaurantId')
   @ApiOperation({ summary: "Récupérer les avis d'un restaurant spécifique" })
-  @ApiParam({ name: 'restaurantId', description: 'ID du client', type: Number })
+  @ApiParam({
+    name: 'restaurantId',
+    description: 'ID du restaurant',
+    type: Number,
+  })
   async getReviewsFromRestaurant(@Param('restaurantId') restaurantId: string) {
     const id = parseInt(restaurantId);
     if (isNaN(id)) {
-      throw new HttpException(
-        'restaurantId invalide',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('restaurantId invalide', HttpStatus.BAD_REQUEST);
     }
 
     return await this.ClientReviewRestaurantService.findByRestaurant(id);
   }
 
-  @Get(':clientId')
+  @Get('client/:clientId')
   @ApiOperation({ summary: "Récupérer les avis d'un client spécifique" })
   @ApiParam({ name: 'clientId', description: 'ID du client', type: Number })
   async getMyReviews(@Param('clientId') clientId: string) {
     const id = parseInt(clientId);
     if (isNaN(id)) {
-      throw new HttpException(
-        'clientId invalide',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('clientId invalide', HttpStatus.BAD_REQUEST);
     }
 
     return await this.ClientReviewRestaurantService.findByUser(id);
@@ -53,7 +53,9 @@ export class ClientReviewRestaurantController {
     @Body() createClientReviewRestaurantDto: CreateClientReviewRestaurantDto,
   ) {
     try {
-      const createdReview = await this.ClientReviewRestaurantService.create(createClientReviewRestaurantDto);
+      const createdReview = await this.ClientReviewRestaurantService.create(
+        createClientReviewRestaurantDto,
+      );
       return createdReview;
     } catch (error) {
       throw new HttpException(
