@@ -63,7 +63,7 @@ async function bootstrap() {
   SwaggerModule.setup('swagger', app, document);
 
   // Configuration pour servir les fichiers statiques (vos images)
-  app.useStaticAssets(join(__dirname, '..', 'Uploads'), {
+  app.useStaticAssets(join(__dirname, '..', 'src/uploads'), {
     prefix: '/uploads',
   });
 

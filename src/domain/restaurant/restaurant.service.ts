@@ -398,7 +398,7 @@ export class RestaurantService {
         this.logger.log(
           `Image existante trouvée pour le restaurant ${restaurantId}. ID: ${existingImage.id}, Chemin: ${existingImage.path}`,
         );
-        const oldFilePath = join('./Uploads', existingImage.path);
+        const oldFilePath = join('./uploads', existingImage.path);
 
         try {
           await fs.unlink(oldFilePath);
@@ -420,7 +420,7 @@ export class RestaurantService {
       const filenameWithoutExt = file.filename.split('.')[0];
       const newFileName = `${filenameWithoutExt}-${Date.now()}.webp`;
       const processedFilePathFull = join(file.destination, newFileName);
-      const relativePathForDb = join('images', newFileName);
+      const relativePathForDb = join('uploads', newFileName);
 
       await sharp(file.path)
         .resize(800)
@@ -524,7 +524,7 @@ export class RestaurantService {
     }
 
     try {
-      const imageFullPath = join('./Uploads', imageToRemove.path);
+      const imageFullPath = join('./uploads', imageToRemove.path);
 
       try {
         await fs.unlink(imageFullPath);

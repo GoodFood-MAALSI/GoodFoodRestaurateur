@@ -131,7 +131,7 @@ export class MenuItemsService {
     const filenameWithoutExt = file.filename.split('.')[0];
     newFileName = `${filenameWithoutExt}-${Date.now()}.webp`;
     processedFilePathFull = join(file.destination, newFileName);
-    const relativePathForDb = join('images', newFileName);
+    const relativePathForDb = join('uploads', newFileName);
 
     await sharp(file.path)
       .resize(800)
@@ -145,12 +145,11 @@ export class MenuItemsService {
       path: relativePathForDb,
       mimetype: 'image/webp',
       size: (await fs.stat(processedFilePathFull)).size,
-      // --- HERE'S THE CRUCIAL CHANGE FOR MenuItem ---
-      menu_item: menuItem,       // Link the MenuItem object
-      menu_item_id: menuItem.id, // Explicitly set the ID
-      restaurant: null,          // Explicitly set restaurant to null
-      restaurant_id: null,       // Explicitly set restaurant_id to null
-      entityType: 'menu_item',   // Set the type for polymorphic lookup
+      menu_item: menuItem,       
+      menu_item_id: menuItem.id,
+      restaurant: null,         
+      restaurant_id: null,       
+      entityType: 'menu_item',   
       isMain: true,
     });
 
@@ -165,7 +164,6 @@ export class MenuItemsService {
   } catch (error) {
     this.logger.error(`Erreur lors du traitement ou de l'enregistrement de l'image pour le MenuItem ${menuItemId}: ${error.message}`, error.stack);
     
-    // ... (cleanup code, as previously discussed, ensure it's defensive)
     if (file && file.path) {
       const fileExists = await fs.access(file.path).then(() => true).catch(() => false);
       if (fileExists) {
