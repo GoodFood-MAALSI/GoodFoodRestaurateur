@@ -19,6 +19,7 @@ import { MenuItemOptionSeeder } from './database/seeders/menu_item_options.seede
 import { MenuItemOptionValueSeeder } from './database/seeders/menu_item_option_values.seeder';
 import { ClientReviewRestaurantSeeder } from './database/seeders/client-review-restaurant.seeder';
 import { ImagesSeeder } from './database/seeders/images.seeder';
+import * as fs from 'fs/promises';
 
 dotenv.config();
 
@@ -52,8 +53,8 @@ async function bootstrap() {
 
   // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('API Documentation')
-    .setDescription("Documentation de l'API NestJS avec Swagger")
+    .setTitle('API Restaurateur Documentation')
+    .setDescription("Documentation de l'API Restaurateur NestJS avec Swagger")
     .setVersion('1.0')
     .addServer(process.env.BACKEND_DOMAIN, 'Local dev')
     .addBearerAuth()
@@ -68,27 +69,51 @@ async function bootstrap() {
   });
 
   // Exécuter les seeders en environnement de développement si nécessaire
-  if (process.env.NODE_ENV === 'development' && process.env.RUN_SEEDERS === 'true') {
-    console.log('Running database seeders...');
-    const dataSource = app.get(DataSource);
+  if (
+    process.env.NODE_ENV === 'development' &&
+    process.env.RUN_SEEDERS === 'true'
+  ) {
+    const seedFilePath = join(__dirname, '.seeded');
+    let hasBeenSeeded = false;
+
+    // Vérifier si le fichier .seeded existe
     try {
-      await runSeeders(dataSource, {
-        seeds: [
-          UserSeeder,
-          RestaurantTypeSeeder,
-          RestaurantSeeder,
-          MenuCategorySeeder,
-          MenuItemSeeder,
-          MenuItemOptionSeeder,
-          MenuItemOptionValueSeeder,
-          ClientReviewRestaurantSeeder,
-          ImagesSeeder,
-        ],
-      });
-      console.log('Seeders executed successfully.');
-    } catch (error) {
-      console.error('Error running seeders:', error);
-      throw error;
+      await fs.access(seedFilePath);
+      hasBeenSeeded = true;
+      console.log('Seeders already executed, skipping...');
+    } catch {
+      // Le fichier n'existe pas, les seeders n'ont pas encore été exécutés
+      hasBeenSeeded = false;
+    }
+
+    if (!hasBeenSeeded) {
+      console.log('Running database seeders for client API...');
+      const dataSource = app.get(DataSource);
+      try {
+        await runSeeders(dataSource, {
+          seeds: [
+            UserSeeder,
+            RestaurantTypeSeeder,
+            RestaurantSeeder,
+            MenuCategorySeeder,
+            MenuItemSeeder,
+            MenuItemOptionSeeder,
+            MenuItemOptionValueSeeder,
+            ClientReviewRestaurantSeeder,
+            ImagesSeeder,
+          ],
+        });
+        console.log('Seeders executed successfully for client API.');
+
+        // Créer le fichier .seeded pour marquer l'exécution
+        await fs.writeFile(
+          seedFilePath,
+          'Seeded on ' + new Date().toISOString(),
+        );
+      } catch (error) {
+        console.error('Error running seeders for client API:', error);
+        throw error;
+      }
     }
   }
 
