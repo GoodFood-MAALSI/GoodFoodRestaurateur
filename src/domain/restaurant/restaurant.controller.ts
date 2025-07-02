@@ -268,23 +268,13 @@ export class RestaurantController {
   }
 
   @Patch(':id/suspend')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Suspendre un restaurant spécifique' })
   @ApiResponse({ status: 200, description: 'Restaurant suspendu avec succès' })
   @ApiResponse({ status: 403, description: 'Accès interdit' })
   @ApiResponse({ status: 404, description: 'Restaurant non trouvé' })
   @ApiResponse({ status: 400, description: 'Restaurant déjà suspendu' })
-  async suspend(@Param('id') id: string, @Req() req: Request) {
+  async suspend(@Param('id') id: string) {
     try {
-      const user = req.user as JwtPayloadType;
-      if (!user || !user.id) {
-        throw new HttpException(
-          'Utilisateur non authentifié',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-
       const restaurant = await this.restaurantService.findOne(+id);
       if (!restaurant) {
         throw new HttpException(
@@ -310,23 +300,13 @@ export class RestaurantController {
   }
 
   @Patch(':id/restore')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Réactiver un restaurant spécifique' })
   @ApiResponse({ status: 200, description: 'Restaurant réactivé avec succès' })
   @ApiResponse({ status: 403, description: 'Accès interdit' })
   @ApiResponse({ status: 404, description: 'Restaurant non trouvé' })
   @ApiResponse({ status: 400, description: 'Restaurant non suspendu' })
-  async restore(@Param('id') id: string, @Req() req: Request) {
+  async restore(@Param('id') id: string) {
     try {
-      const user = req.user as JwtPayloadType;
-      if (!user || !user.id) {
-        throw new HttpException(
-          'Utilisateur non authentifié',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-
       const restaurant = await this.restaurantService.findOne(+id);
       if (!restaurant) {
         throw new HttpException(
