@@ -4,7 +4,7 @@ import { IsEntityExistsConstraint } from '../utils/validators/is-entity-exists.v
 import { ClientReviewRestaurant } from './entities/client-review-restaurant.entity';
 import { ClientReviewRestaurantController } from './client-review-restaurant.controller';
 import { ClientReviewRestaurantService } from './client-review-restaurant.service';
-import { HttpModule } from 'node_modules/@nestjs/axios';
+import { HttpModule } from '@nestjs/axios';
 import { UsersModule } from '../users/users.module';
 
 @Module({
