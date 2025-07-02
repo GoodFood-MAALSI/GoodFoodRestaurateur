@@ -1,6 +1,10 @@
 import { Restaurant } from 'src/domain/restaurant/entities/restaurant.entity';
-import { User } from 'src/domain/users/entities/user.entity';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+
+export enum ReviewStatus {
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+}
 
 @Entity()
 export class ClientReviewRestaurant {
@@ -18,6 +22,13 @@ export class ClientReviewRestaurant {
 
   @Column()
   restaurantId: number;
+
+  @Column({
+    type: 'enum',
+    enum: ReviewStatus,
+    default: ReviewStatus.ACTIVE,
+  })
+  status: ReviewStatus;
 
   @ManyToOne(() => Restaurant)
   @JoinColumn({ name: 'restaurantId' })
