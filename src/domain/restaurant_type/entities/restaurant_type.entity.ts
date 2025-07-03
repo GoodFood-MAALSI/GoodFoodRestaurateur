@@ -1,10 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Restaurant } from 'src/domain/restaurant/entities/restaurant.entity';
 import {
     Column,
     CreateDateColumn,
     Entity,
-    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
   } from 'typeorm';

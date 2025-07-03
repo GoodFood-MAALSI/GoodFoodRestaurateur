@@ -7,7 +7,7 @@ import { Restaurant } from '../restaurant/entities/restaurant.entity';
 import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RestaurantType]),TypeOrmModule.forFeature([Restaurant]),TypeOrmModule.forFeature([MenuCategory])],
+  imports: [TypeOrmModule.forFeature([RestaurantType])],
   controllers: [RestaurantTypeController],
   providers: [RestaurantTypeService],
 })
