@@ -24,7 +24,6 @@ import { Request } from 'express';
 import { Pagination } from '../utils/pagination';
 import { FilterClientReviewRestaurantDto } from './dto/filter-client-review-restaurant.dto';
 
-@ApiTags('Client Reviews')
 @Controller('client-review-restaurant')
 export class ClientReviewRestaurantController {
   constructor(

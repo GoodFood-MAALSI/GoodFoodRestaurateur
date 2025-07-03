@@ -40,7 +40,6 @@ import { Restaurant } from './entities/restaurant.entity';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
 
 @Controller('restaurant')
-@ApiTags('Restaurants')
 export class RestaurantController {
   constructor(private readonly restaurantService: RestaurantService) {}
 
