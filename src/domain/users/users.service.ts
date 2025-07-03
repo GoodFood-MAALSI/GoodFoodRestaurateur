@@ -7,6 +7,7 @@ import { Session } from '../session/entities/session.entity';
 import { EntityCondition } from '../utils/types/entity-condition.type';
 import { NullableType } from '../utils/types/nullable.type';
 import { Restaurant, RestaurantStatus } from '../restaurant/entities/restaurant.entity';
+import { FilterUsersDto } from './dto/filter-users.dto';
 
 @Injectable()
 export class UsersService {
@@ -27,6 +28,38 @@ export class UsersService {
       throw new HttpException('User already exists', HttpStatus.CONFLICT);
     const user = this.usersRepository.create(createUserDto);
     return this.usersRepository.save(user);
+  }
+
+  async findAllUsers(filterUsersDto: FilterUsersDto): Promise<{ users: User[]; total: number }> {
+    const where: EntityCondition<User> = {};
+    if (filterUsersDto?.status) {
+      where.status = filterUsersDto.status;
+    }
+
+    const page = filterUsersDto.page || 1;
+    const limit = filterUsersDto.limit || 10;
+    const skip = (page - 1) * limit;
+
+    try {
+      const [users, total] = await this.usersRepository.findAndCount({
+        where,
+        order: {
+          created_at: 'DESC',
+        },
+        skip,
+        take: limit,
+      });
+
+      return { users, total };
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: 'Échec de la récupération des utilisateurs',
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async findOneUser(options: EntityCondition<User>): Promise<NullableType<User>> {

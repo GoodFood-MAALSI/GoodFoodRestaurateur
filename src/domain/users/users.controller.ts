@@ -8,7 +8,8 @@ import {
   UseGuards,
   HttpException,
   HttpStatus,
-  Request,
+  Query,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
@@ -24,11 +25,44 @@ import { User } from './entities/user.entity';
 import * as jwt from 'jsonwebtoken';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserStatus } from './entities/user.entity';
+import { FilterUsersDto } from './dto/filter-users.dto';
+import { Pagination } from '../utils/pagination';
+import { Request } from 'express';
 
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get()
+    @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
+    @ApiResponse({ status: 200, description: 'Liste des utilisateurs' })
+    @ApiResponse({ status: 403, description: 'Accès interdit' })
+    async findAll(
+      @Query() filterUsersDto: FilterUsersDto,
+      @Req() req: Request,
+    ): Promise<{ users: User[]; links: any; meta: any }> {
+  
+      try {
+        const { users, total } = await this.usersService.findAllUsers(filterUsersDto);
+        const { links, meta } = Pagination.generatePaginationMetadata(
+          req,
+          filterUsersDto.page || 1,
+          total,
+          filterUsersDto.limit || 10,
+        );
+  
+        return { users, links, meta };
+      } catch (error) {
+        throw new HttpException(
+          {
+            message: 'Échec de la récupération des utilisateurs',
+            error: error.message,
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
 
   @Get(':id')
   @ApiBearerAuth()
@@ -213,7 +247,7 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Non autorisé' })
   @ApiResponse({ status: 403, description: 'Rôle invalide' })
   @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
-  async verifyRestaurateur(@Param('userId') userId: string, @Request() req) {
+  async verifyRestaurateur(@Param('userId') userId: string, @Req() req) {
     const token = req.headers['authorization']?.split(' ')[1];
     if (!token) {
       throw new HttpException('Token manquant', HttpStatus.UNAUTHORIZED);
