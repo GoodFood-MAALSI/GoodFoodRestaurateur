@@ -77,7 +77,9 @@ export class RestaurantService {
   ): Promise<{ restaurants: Restaurant[]; total: number }> {
     const where: Record<string, any> = {};
 
-    where.status = filters.status ?? RestaurantStatus.Active;
+    if (filters.status) {
+      where.status = filters.status;
+    }
 
     if (filters.name) {
       where.name = ILike(`%${filters.name}%`);
