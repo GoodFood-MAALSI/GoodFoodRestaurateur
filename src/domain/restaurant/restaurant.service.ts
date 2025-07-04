@@ -169,6 +169,7 @@ export class RestaurantService {
         'user',
         'menuCategories',
         'menuCategories.menuItems',
+        'menuCategories.menuItems.images',
         'menuCategories.menuItems.menuItemOptions',
         'menuCategories.menuItems.menuItemOptions.menuItemOptionValues',
       ],
