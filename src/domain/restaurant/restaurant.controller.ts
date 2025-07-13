@@ -1,3 +1,4 @@
+// restaurateur/src/restaurant/restaurant.controller.ts
 import {
   Controller,
   Get,
@@ -38,6 +39,7 @@ import { FileInterceptor } from '@nestjs/platform-express/multer';
 import { multerConfig } from 'src/multer.config';
 import { Restaurant } from './entities/restaurant.entity';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
+import { BypassResponseWrapper } from '../utils/decorators/bypass-response-wrapper.decorator';
 
 @Controller('restaurant')
 export class RestaurantController {
@@ -180,6 +182,37 @@ export class RestaurantController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Get('interservice/:id')
+  @BypassResponseWrapper()
+  @ApiOperation({ summary: 'Récupérer un restaurant pour appels interservices' })
+  @ApiParam({ name: 'id', description: 'ID du restaurant', type: Number })
+  @ApiResponse({ status: 200, description: 'Restaurant récupéré avec succès', type: Restaurant })
+  @ApiResponse({ status: 400, description: 'ID invalide' })
+  @ApiResponse({ status: 404, description: 'Restaurant non trouvé' })
+  async getRestaurantForInterservice(@Param('id') id: string): Promise<Partial<Restaurant>> {
+    const restaurantId = parseInt(id);
+    if (isNaN(restaurantId)) {
+      throw new HttpException('ID doit être un nombre', HttpStatus.BAD_REQUEST);
+    }
+
+    const restaurant = await this.restaurantService.findOne(restaurantId);
+    if (!restaurant) {
+      throw new HttpException('Restaurant non trouvé', HttpStatus.NOT_FOUND);
+    }
+
+    return {
+      id: restaurant.id,
+      name: restaurant.name,
+      street_number: restaurant.street_number,
+      street: restaurant.street,
+      city: restaurant.city,
+      postal_code: restaurant.postal_code,
+      country: restaurant.country,
+      email: restaurant.email,
+      phone_number: restaurant.phone_number,
+    };
   }
 
   @Patch(':id')

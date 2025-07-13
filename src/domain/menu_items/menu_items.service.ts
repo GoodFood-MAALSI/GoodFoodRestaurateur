@@ -239,4 +239,14 @@ async removeImage(menuItemId: number, imageId: number): Promise<MenuItem> {
       throw new InternalServerErrorException('Échec de la suppression de l\'image.');
     }
   }
+
+  async findOne(id: number): Promise<MenuItem> {
+    const menuItem = await this.menuItemRepository.findOne({
+      where: { id },
+    });
+    if (!menuItem) {
+      throw new NotFoundException('Menu item non trouvée');
+    }
+    return menuItem;
+  }
 }
