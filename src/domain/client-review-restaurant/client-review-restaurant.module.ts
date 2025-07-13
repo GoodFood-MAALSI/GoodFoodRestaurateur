@@ -6,6 +6,7 @@ import { ClientReviewRestaurantController } from './client-review-restaurant.con
 import { ClientReviewRestaurantService } from './client-review-restaurant.service';
 import { HttpModule } from '@nestjs/axios';
 import { UsersModule } from '../users/users.module';
+import { InterserviceService } from '../interservice/interservice.service';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { UsersModule } from '../users/users.module';
     UsersModule
   ],
   controllers: [ClientReviewRestaurantController],
-  providers: [IsEntityExistsConstraint, ClientReviewRestaurantService],
+  providers: [IsEntityExistsConstraint, ClientReviewRestaurantService, InterserviceService],
 })
 export class ClientReviewRestaurantModule {}

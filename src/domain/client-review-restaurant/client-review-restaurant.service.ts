@@ -12,6 +12,9 @@ import {
 } from './entities/client-review-restaurant.entity';
 import { CreateClientReviewRestaurantDto } from './dto/create-client-review-restaurant.dto';
 import { Restaurant, RestaurantStatus } from '../restaurant/entities/restaurant.entity';
+import { InterserviceService } from '../interservice/interservice.service';
+import { Client } from '../interservice/interfaces/client.interface';
+import { Pagination } from '../utils/pagination';
 
 @Injectable()
 export class ClientReviewRestaurantService {
@@ -20,11 +23,21 @@ export class ClientReviewRestaurantService {
     private readonly clientReviewRestaurantRepository: Repository<ClientReviewRestaurant>,
     @InjectRepository(Restaurant)
     private readonly restaurantRepository: Repository<Restaurant>,
+    private readonly interserviceService: InterserviceService,
   ) {}
+
+  private async enrichReview(review: ClientReviewRestaurant): Promise<ClientReviewRestaurant & { client?: Client }> {
+    const client = await this.interserviceService.fetchClient(review.clientId);
+    return { ...review, client };
+  }
+
+  private async enrichReviews(reviews: ClientReviewRestaurant[]): Promise<(ClientReviewRestaurant & { client?: Client })[]> {
+    return Promise.all(reviews.map((review) => this.enrichReview(review)));
+  }
 
   async create(
     createClientReviewRestaurantDto: CreateClientReviewRestaurantDto,
-  ): Promise<ClientReviewRestaurant> {
+  ): Promise<ClientReviewRestaurant & { client?: Client }> {
     const { restaurantId } = createClientReviewRestaurantDto;
 
     // Vérifier si le restaurant existe et son statut
@@ -44,7 +57,8 @@ export class ClientReviewRestaurantService {
     const clientReview = this.clientReviewRestaurantRepository.create({
       ...createClientReviewRestaurantDto,
     });
-    return await this.clientReviewRestaurantRepository.save(clientReview);
+    const savedReview = await this.clientReviewRestaurantRepository.save(clientReview);
+    return this.enrichReview(savedReview);
   }
 
   async findAll(
@@ -52,7 +66,13 @@ export class ClientReviewRestaurantService {
     status?: ReviewStatus,
     page = 1,
     limit = 10,
-  ): Promise<{ reviews: ClientReviewRestaurant[]; total: number }> {
+    req?: any,
+  ): Promise<{
+    reviews: (ClientReviewRestaurant & { client?: Client })[];
+    total: number;
+    links?: any;
+    meta?: any;
+  }> {
     const where: any = {};
     if (rating) {
       where.rating = rating;
@@ -61,33 +81,45 @@ export class ClientReviewRestaurantService {
       where.status = status;
     }
 
-    const [reviews, total] =
-      await this.clientReviewRestaurantRepository.findAndCount({
-        where,
-        relations: ['restaurant'],
-        skip: (page - 1) * limit,
-        take: limit,
-        order: { created_at: 'DESC' },
-      });
+    const [reviews, total] = await this.clientReviewRestaurantRepository.findAndCount({
+      where,
+      relations: ['restaurant'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { created_at: 'DESC' },
+    });
 
-    return { reviews, total };
+    const enrichedReviews = await this.enrichReviews(reviews);
+
+    let links: any = {};
+    let meta: any = {};
+    if (req) {
+      const pagination = Pagination.generatePaginationMetadata(req, page, total, limit);
+      links = pagination.links;
+      meta = pagination.meta;
+    }
+
+    return { reviews: enrichedReviews, total, links, meta };
   }
 
-  async findOne(id: number): Promise<ClientReviewRestaurant> {
+  async findOne(id: number): Promise<ClientReviewRestaurant & { client?: Client }> {
     const clientReview = await this.clientReviewRestaurantRepository.findOne({
       where: { id },
-      relations: ['restaurant'],
     });
     if (!clientReview) {
       throw new NotFoundException('Review not found');
     }
-    return clientReview;
+    return this.enrichReview(clientReview);
   }
 
-  async suspend(id: number): Promise<ClientReviewRestaurant> {
+  async suspend(id: number): Promise<ClientReviewRestaurant & { client?: Client }> {
     const clientReview = await this.clientReviewRestaurantRepository.findOne({
       where: { id },
     });
+
+    if (!clientReview) {
+      throw new NotFoundException('Review not found');
+    }
 
     if (clientReview.status === ReviewStatus.SUSPENDED) {
       throw new HttpException(
@@ -97,13 +129,18 @@ export class ClientReviewRestaurantService {
     }
 
     clientReview.status = ReviewStatus.SUSPENDED;
-    return await this.clientReviewRestaurantRepository.save(clientReview);
+    const updatedReview = await this.clientReviewRestaurantRepository.save(clientReview);
+    return this.enrichReview(updatedReview);
   }
 
-  async restore(id: number): Promise<ClientReviewRestaurant> {
+  async restore(id: number): Promise<ClientReviewRestaurant & { client?: Client }> {
     const clientReview = await this.clientReviewRestaurantRepository.findOne({
       where: { id },
     });
+
+    if (!clientReview) {
+      throw new NotFoundException('Review not found');
+    }
 
     if (clientReview.status === ReviewStatus.ACTIVE) {
       throw new HttpException(
@@ -113,11 +150,18 @@ export class ClientReviewRestaurantService {
     }
 
     clientReview.status = ReviewStatus.ACTIVE;
-    return await this.clientReviewRestaurantRepository.save(clientReview);
+    const updatedReview = await this.clientReviewRestaurantRepository.save(clientReview);
+    return this.enrichReview(updatedReview);
   }
 
   async remove(id: number): Promise<void> {
-    const clientReview = await this.findOne(id);
+    const clientReview = await this.clientReviewRestaurantRepository.findOne({
+      where: { id },
+    });
+
+    if (!clientReview) {
+      throw new NotFoundException('Review not found');
+    }
 
     if (clientReview.status === ReviewStatus.SUSPENDED) {
       throw new HttpException(
@@ -133,39 +177,45 @@ export class ClientReviewRestaurantService {
     clientId: number,
     page = 1,
     limit = 10,
-  ): Promise<{ reviews: ClientReviewRestaurant[]; total: number }> {
-    const [reviews, total] =
-      await this.clientReviewRestaurantRepository.findAndCount({
-        where: {
-          clientId,
-          status: ReviewStatus.ACTIVE,
-        },
-        relations: ['restaurant'],
-        skip: (page - 1) * limit,
-        take: limit,
-        order: { created_at: 'DESC' },
-      });
+  ): Promise<{
+    reviews: (ClientReviewRestaurant & { client?: Client })[];
+    total: number;
+  }> {
+    const [reviews, total] = await this.clientReviewRestaurantRepository.findAndCount({
+      where: {
+        clientId,
+        status: ReviewStatus.ACTIVE,
+      },
+      relations: ['restaurant'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { created_at: 'DESC' },
+    });
 
-    return { reviews, total };
+    const enrichedReviews = await this.enrichReviews(reviews);
+    return { reviews: enrichedReviews, total };
   }
 
   async findByRestaurant(
     restaurantId: number,
     page = 1,
     limit = 10,
-  ): Promise<{ reviews: ClientReviewRestaurant[]; total: number }> {
-    const [reviews, total] =
-      await this.clientReviewRestaurantRepository.findAndCount({
-        where: {
-          restaurantId,
-          status: ReviewStatus.ACTIVE,
-        },
-        relations: ['restaurant'],
-        skip: (page - 1) * limit,
-        take: limit,
-        order: { created_at: 'DESC' },
-      });
+  ): Promise<{
+    reviews: (ClientReviewRestaurant & { client?: Client })[];
+    total: number;
+  }> {
+    const [reviews, total] = await this.clientReviewRestaurantRepository.findAndCount({
+      where: {
+        restaurantId,
+        status: ReviewStatus.ACTIVE,
+      },
+      relations: ['restaurant'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { created_at: 'DESC' },
+    });
 
-    return { reviews, total };
+    const enrichedReviews = await this.enrichReviews(reviews);
+    return { reviews: enrichedReviews, total };
   }
 }
