@@ -30,6 +30,7 @@ import {
   ApiQuery,
   ApiResponse,
   ApiTags,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { RestaurantFilterDto } from './dto/restaurant-filter.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -185,6 +186,7 @@ export class RestaurantController {
   }
 
   @Get('interservice/:id')
+  @ApiExcludeEndpoint()
   @BypassResponseWrapper()
   @ApiOperation({ summary: 'Récupérer un restaurant pour appels interservices' })
   @ApiParam({ name: 'id', description: 'ID du restaurant', type: Number })

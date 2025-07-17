@@ -15,12 +15,11 @@ import { MenuItemOptionValuesService } from './menu_item_option_values.service';
 import { CreateMenuItemOptionValueDto } from './dto/create-menu_item_option_value.dto';
 import { UpdateMenuItemOptionValueDto } from './dto/update-menu_item_option_value.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiExcludeEndpoint, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { BypassResponseWrapper } from '../utils/decorators/bypass-response-wrapper.decorator';
 import { MenuItemOptionValue } from './entities/menu_item_option_value.entity';
 
 @Controller('menu-item-option-values')
-@ApiTags('menu-item-option-values')
 export class MenuItemOptionValuesController {
   constructor(
     private readonly menuItemOptionValuesService: MenuItemOptionValuesService,
@@ -38,6 +37,7 @@ export class MenuItemOptionValuesController {
   }
 
   @Get('interservice/:id')
+  @ApiExcludeEndpoint()
   @BypassResponseWrapper()
   @ApiOperation({ summary: 'Récupérer une valeur d’option de menu pour appels interservices' })
   @ApiParam({ name: 'id', description: 'ID de la valeur d’option', type: Number })

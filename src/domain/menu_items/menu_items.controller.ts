@@ -25,6 +25,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
+  ApiExcludeEndpoint,
   ApiOperation,
   ApiParam,
 } from '@nestjs/swagger';
@@ -130,6 +131,7 @@ export class MenuItemsController {
   // }
 
   @Get('interservice/:id')
+  @ApiExcludeEndpoint()
   @BypassResponseWrapper()
   @ApiOperation({
     summary: 'Récupérer un menu item pour appels interservices',
