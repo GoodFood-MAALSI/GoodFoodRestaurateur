@@ -1,12 +1,22 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus, Inject, Type } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Type,
+} from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { UsersService } from '../users/users.service';
+import { UsersService } from '../../users/users.service';
 
 @Injectable()
-export class RolesAuthGuard implements CanActivate {
-  private allowedRoles: Array<'client' | 'restaurateur' | 'livreur' | 'admin'>;
+export class InterserviceAuthGuard implements CanActivate {
+  private allowedRoles: Array<
+    'client' | 'restaurateur' | 'deliverer' | 'super-admin' | 'admin'
+  >;
 
   constructor(
     @Inject(HttpService) private readonly httpService: HttpService,
@@ -14,7 +24,11 @@ export class RolesAuthGuard implements CanActivate {
   ) {}
 
   // Méthode à appeler après l'instanciation
-  setRoles(roles: Array<'client' | 'restaurateur' | 'livreur' | 'admin'>) {
+  setRoles(
+    roles: Array<
+      'client' | 'restaurateur' | 'deliverer' | 'super-admin' | 'admin'
+    >,
+  ) {
     this.allowedRoles = roles;
   }
 
@@ -38,43 +52,59 @@ export class RolesAuthGuard implements CanActivate {
           const userId = parseInt(decoded.id, 10);
           const user = await this.usersService.findOneUser({ id: userId });
           if (!user) {
-            throw new HttpException('Utilisateur restaurateur non trouvé', HttpStatus.UNAUTHORIZED);
+            throw new HttpException(
+              'Utilisateur restaurateur non trouvé',
+              HttpStatus.UNAUTHORIZED,
+            );
           }
-          request.auth = { id: decoded.id, role: decoded.role };
+          request.user = { id: decoded.id, role: decoded.role };
+
           return true;
         }
       }
 
-      // Vérifier autres rôles
+      // Vérification des rôles et association des secrets
       const secrets: Record<string, string | undefined> = {
         client: process.env.CLIENT_SECRET,
-        admin: process.env.ADMIN_SECRET,
-        livreur: process.env.LIVREUR_SECRET,
+        'super-admin': process.env.ADMINISTRATEUR_SECRET,
+        admin: process.env.ADMINISTRATEUR_SECRET,
+        deliverer: process.env.DELIVERY_SECRET,
       };
 
+      // Mappage des rôles vers leurs services respectifs
       const roleToServiceMap: Record<string, string> = {
         client: 'client-service.client.svc.cluster.local:3001/users',
-        admin: 'admin-service.admin.svc.cluster.local:3004/users',
-        livreur: 'livreur-service.livreur.svc.cluster.local:3003/users',
+        'super-admin':
+          'administrateur-service.administrateur.svc.cluster.local:3004/users',
+        admin:
+          'administrateur-service.administrateur.svc.cluster.local:3004/users',
+        deliverer: 'delivery-service.delivery.svc.cluster.local:3003/users',
       };
 
       for (const role of this.allowedRoles) {
+        console.log(role);
         if (role === 'restaurateur') continue;
 
         try {
           const secret = secrets[role];
           decoded = jwt.verify(token, secret) as any;
+          console.log(decoded.role, role);
           if (decoded.role === role) {
             userRole = decoded.role;
 
             const response = await firstValueFrom(
-              this.httpService.get(`http://${roleToServiceMap[role]}/verify/${decoded.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              }),
+              this.httpService.get(
+                `http://${roleToServiceMap[role]}/verify/${decoded.id}`,
+                {
+                  headers: { Authorization: `Bearer ${token}` },
+                },
+              ),
             );
 
+            console.log(response);
+
             if (response.status === 200) {
-              request.auth = { id: decoded.id, role: userRole };
+              request.user = { id: decoded.id, role: userRole };
               return true;
             }
           }
@@ -83,20 +113,26 @@ export class RolesAuthGuard implements CanActivate {
         }
       }
 
-      throw new HttpException('Rôle non autorisé, token invalide ou utilisateur inexistant', HttpStatus.FORBIDDEN);
+      throw new HttpException(
+        'Rôle non autorisé, token invalide ou utilisateur inexistant',
+        HttpStatus.FORBIDDEN,
+      );
     } catch (err) {
       throw err instanceof HttpException
         ? err
-        : new HttpException('Erreur d\'authentification', HttpStatus.UNAUTHORIZED);
+        : new HttpException(
+            "Erreur d'authentification",
+            HttpStatus.UNAUTHORIZED,
+          );
     }
   }
 }
 
-export const RoleAuthGuardFactory = (
-  roles: Array<'client' | 'restaurateur' | 'livreur' | 'admin'>,
+export const InterserviceAuthGuardFactory = (
+  roles: Array<'client' | 'restaurateur' | 'deliverer' | 'super-admin' | 'admin'>,
 ): Type<CanActivate> => {
   @Injectable()
-  class ConfiguredGuard extends RolesAuthGuard {
+  class ConfiguredGuard extends InterserviceAuthGuard {
     constructor(httpService: HttpService, usersService: UsersService) {
       super(httpService, usersService);
       this.setRoles(roles);

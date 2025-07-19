@@ -13,7 +13,6 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
-  ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
@@ -28,44 +27,47 @@ import { UserStatus } from './entities/user.entity';
 import { FilterUsersDto } from './dto/filter-users.dto';
 import { Pagination } from '../utils/pagination';
 import { Request } from 'express';
+import { InterserviceAuthGuardFactory } from '../interservice/guards/interservice-auth.guard';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-    @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
-    @ApiResponse({ status: 200, description: 'Liste des utilisateurs' })
-    @ApiResponse({ status: 403, description: 'Accès interdit' })
-    async findAll(
-      @Query() filterUsersDto: FilterUsersDto,
-      @Req() req: Request,
-    ): Promise<{ users: User[]; links: any; meta: any }> {
-  
-      try {
-        const { users, total } = await this.usersService.findAllUsers(filterUsersDto);
-        const { links, meta } = Pagination.generatePaginationMetadata(
-          req,
-          filterUsersDto.page || 1,
-          total,
-          filterUsersDto.limit || 10,
-        );
-  
-        return { users, links, meta };
-      } catch (error) {
-        throw new HttpException(
-          {
-            message: 'Échec de la récupération des utilisateurs',
-            error: error.message,
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+  @UseGuards(InterserviceAuthGuardFactory(['super-admin', 'admin']))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
+  @ApiResponse({ status: 200, description: 'Liste des utilisateurs' })
+  @ApiResponse({ status: 403, description: 'Accès interdit' })
+  async findAll(
+    @Query() filterUsersDto: FilterUsersDto,
+    @Req() req: Request,
+  ): Promise<{ users: User[]; links: any; meta: any }> {
+    try {
+      const { users, total } =
+        await this.usersService.findAllUsers(filterUsersDto);
+      const { links, meta } = Pagination.generatePaginationMetadata(
+        req,
+        filterUsersDto.page || 1,
+        total,
+        filterUsersDto.limit || 10,
+      );
+
+      return { users, links, meta };
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: 'Échec de la récupération des utilisateurs',
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
+  }
 
   @Get(':id')
+  @UseGuards(InterserviceAuthGuardFactory(['super-admin', 'admin' , 'restaurateur']))
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Récupérer un utilisateur par ID' })
   @ApiResponse({ status: 200, description: 'Utilisateur trouvé' })
   @ApiResponse({ status: 403, description: 'Accès interdit' })
@@ -99,8 +101,8 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @UseGuards(InterserviceAuthGuardFactory(['super-admin', 'admin', 'restaurateur']))
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({
     summary: "Mettre à jour le prénom et/ou nom d'un utilisateur",
   })
@@ -146,8 +148,8 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Supprimer définitivement un utilisateur' })
   @ApiResponse({
     status: 200,
@@ -185,14 +187,17 @@ export class UsersController {
   }
 
   @Patch(':id/suspend')
+  @UseGuards(InterserviceAuthGuardFactory(['super-admin', 'admin']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Suspendre un utilisateur et ses restaurants' })
-  @ApiResponse({ status: 200, description: 'Utilisateur et restaurants suspendus avec succès' })
+  @ApiResponse({
+    status: 200,
+    description: 'Utilisateur et restaurants suspendus avec succès',
+  })
   @ApiResponse({ status: 403, description: 'Accès interdit' })
   @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
   @ApiResponse({ status: 400, description: 'Utilisateur déjà suspendu' })
-  async suspend(
-    @Param('id') id: string
-  ): Promise<{ message: string }> {
+  async suspend(@Param('id') id: string): Promise<{ message: string }> {
     const userId = +id;
 
     const user = await this.usersService.findOneUser({ id: userId });
@@ -202,7 +207,7 @@ export class UsersController {
 
     if (user.status === UserStatus.Suspended) {
       throw new HttpException(
-        'L\'utilisateur est déjà suspendu',
+        "L'utilisateur est déjà suspendu",
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -212,14 +217,17 @@ export class UsersController {
   }
 
   @Patch(':id/restore')
+  @UseGuards(InterserviceAuthGuardFactory(['super-admin', 'admin']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Réactiver un utilisateur et ses restaurants' })
-  @ApiResponse({ status: 200, description: 'Utilisateur et restaurants réactivés avec succès' })
+  @ApiResponse({
+    status: 200,
+    description: 'Utilisateur et restaurants réactivés avec succès',
+  })
   @ApiResponse({ status: 403, description: 'Accès interdit' })
   @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
   @ApiResponse({ status: 400, description: 'Utilisateur non suspendu' })
-  async restore(
-    @Param('id') id: string
-  ): Promise<{ message: string }> {
+  async restore(@Param('id') id: string): Promise<{ message: string }> {
     const userId = +id;
 
     const user = await this.usersService.findOneUser({ id: userId });
@@ -229,7 +237,7 @@ export class UsersController {
 
     if (user.status !== UserStatus.Suspended) {
       throw new HttpException(
-        'L\'utilisateur n\'est pas suspendu',
+        "L'utilisateur n'est pas suspendu",
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -241,7 +249,9 @@ export class UsersController {
   @Get('/verify/:userId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Vérifier un utilisateur pour les appels inter-services' })
+  @ApiOperation({
+    summary: 'Vérifier un utilisateur pour les appels inter-services',
+  })
   @ApiResponse({ status: 200, description: 'Utilisateur vérifié' })
   @ApiResponse({ status: 401, description: 'Non autorisé' })
   @ApiResponse({ status: 403, description: 'Rôle invalide' })
@@ -260,7 +270,10 @@ export class UsersController {
       const authRole = decoded.role;
 
       if (!authUserId || !authRole) {
-        throw new HttpException('ID ou rôle manquant dans le token', HttpStatus.UNAUTHORIZED);
+        throw new HttpException(
+          'ID ou rôle manquant dans le token',
+          HttpStatus.UNAUTHORIZED,
+        );
       }
 
       if (authRole !== 'restaurateur') {
@@ -268,7 +281,10 @@ export class UsersController {
       }
 
       if (userId !== authUserId) {
-        throw new HttpException('Utilisateur non autorisé', HttpStatus.FORBIDDEN);
+        throw new HttpException(
+          'Utilisateur non autorisé',
+          HttpStatus.FORBIDDEN,
+        );
       }
 
       const user = await this.usersService.findOneUser({ id: +userId });
@@ -278,7 +294,10 @@ export class UsersController {
 
       return { message: 'Restaurateur vérifié' };
     } catch (err) {
-      throw new HttpException('Erreur de validation du token', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'Erreur de validation du token',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
   }
 }

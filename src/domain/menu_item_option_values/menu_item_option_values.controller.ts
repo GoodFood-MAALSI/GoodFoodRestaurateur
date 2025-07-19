@@ -10,14 +10,16 @@ import {
   ParseIntPipe,
   HttpException,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import { MenuItemOptionValuesService } from './menu_item_option_values.service';
 import { CreateMenuItemOptionValueDto } from './dto/create-menu_item_option_value.dto';
 import { UpdateMenuItemOptionValueDto } from './dto/update-menu_item_option_value.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiBody, ApiExcludeEndpoint, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { BypassResponseWrapper } from '../utils/decorators/bypass-response-wrapper.decorator';
 import { MenuItemOptionValue } from './entities/menu_item_option_value.entity';
+import { InterserviceAuthGuardFactory } from '../interservice/guards/interservice-auth.guard';
+import { Request } from 'express';
 
 @Controller('menu-item-option-values')
 export class MenuItemOptionValuesController {
@@ -26,13 +28,15 @@ export class MenuItemOptionValuesController {
   ) {}
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
   @ApiBody({ type: CreateMenuItemOptionValueDto })
   @ApiOperation({ summary: 'Créer une nouvelle option value de menu' })
-  create(@Body() createMenuItemOptionValueDto: CreateMenuItemOptionValueDto) {
+  create(@Body() createMenuItemOptionValueDto: CreateMenuItemOptionValueDto, @Req() req: Request) {
+    const user = req.user;
     return this.menuItemOptionValuesService.create(
       createMenuItemOptionValueDto,
+      user.id,
     );
   }
 
@@ -57,25 +61,29 @@ export class MenuItemOptionValuesController {
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
   @ApiBody({ type: UpdateMenuItemOptionValueDto })
   @ApiOperation({ summary: 'Mettre à jour une option value de menu' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateMenuItemOptionValueDto: UpdateMenuItemOptionValueDto,
+    @Req() req: Request,
   ) {
+    const user = req.user;
     return this.menuItemOptionValuesService.update(
       id,
       updateMenuItemOptionValueDto,
+      user.id,
     );
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Supprimer une option value de menu' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.menuItemOptionValuesService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+    const user = req.user;
+    return this.menuItemOptionValuesService.remove(id, user.id);
   }
 }

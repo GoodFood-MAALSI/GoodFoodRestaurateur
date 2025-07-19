@@ -15,12 +15,11 @@ import {
   ParseIntPipe,
   HttpException,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import { MenuItemsService } from './menu_items.service';
 import { CreateMenuItemDto } from './dto/create-menu_item.dto';
 import { UpdateMenuItemDto } from './dto/update-menu_item.dto';
-import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.entity';
-import { CreateMenuItemOptionDto } from '../menu_item_options/dto/create-menu_item_option.dto';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -29,71 +28,72 @@ import {
   ApiOperation,
   ApiParam,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
 import { multerConfig } from 'src/multer.config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MenuItem } from './entities/menu_item.entity';
 import { BypassResponseWrapper } from '../utils/decorators/bypass-response-wrapper.decorator';
+import { InterserviceAuthGuardFactory } from '../interservice/guards/interservice-auth.guard';
+import { Request } from 'express';
 
 @Controller('menu-items')
 export class MenuItemsController {
   constructor(private readonly menuItemsService: MenuItemsService) {}
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
   @ApiBody({ type: CreateMenuItemDto })
   @ApiOperation({ summary: 'Créer un item de menu' })
-  create(@Body() createMenuItemDto: CreateMenuItemDto) {
-    return this.menuItemsService.create(createMenuItemDto);
+  create(@Body() createMenuItemDto: CreateMenuItemDto, @Req() req: Request) {
+    const user = req.user;
+    return this.menuItemsService.create(createMenuItemDto, user.id);
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
   @ApiBody({ type: UpdateMenuItemDto })
   @ApiOperation({ summary: 'Mettre à jour un item de menu' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateMenuItemDto: UpdateMenuItemDto,
+    @Req() req: Request,
   ) {
-    return this.menuItemsService.update(+id, updateMenuItemDto);
+    const user = req.user;
+    return this.menuItemsService.update(id, updateMenuItemDto, user.id);
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Supprimer un item de menu' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.menuItemsService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+    const user = req.user;
+    return this.menuItemsService.remove(id, user.id);
   }
 
   @Post(':id/upload-image')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Uploader une image pour un menu item spécifique' }) // Description pour Swagger
-  @ApiParam({ name: 'id', description: 'ID du menu item', type: Number }) // Description du paramètre d'URL
-  @ApiConsumes('multipart/form-data') // Indique que le type de contenu est multipart/form-data
+  @ApiOperation({ summary: 'Uploader une image pour un menu item spécifique' })
+  @ApiParam({ name: 'id', description: 'ID du menu item', type: Number })
+  @ApiConsumes('multipart/form-data')
   @ApiBody({
-    // Décrit le corps de la requête pour l'upload de fichier
     schema: {
       type: 'object',
       properties: {
         image: {
-          // 'image' doit correspondre au nom du champ dans FileInterceptor
           type: 'string',
-          format: 'binary', // Indique à Swagger qu'il s'agit d'un fichier binaire
+          format: 'binary',
           description: 'Fichier image à uploader (JPEG, PNG, max 5MB)',
         },
-        // Vous pouvez ajouter d'autres champs de formulaire si nécessaire, par exemple:
-        // isMain: { type: 'boolean', description: 'Définir comme image principale' }
       },
-      required: ['image'], // Indique que le champ 'image' est obligatoire
+      required: ['image'],
     },
   })
-  @UseInterceptors(FileInterceptor('image', multerConfig)) // 'image' doit correspondre au nom du champ dans ApiBody
+  @UseInterceptors(FileInterceptor('image', multerConfig))
   async uploadRestaurantImage(
-    @Param('id') menuItemId: number,
+    @Param('id', ParseIntPipe) menuItemId: number,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -102,26 +102,24 @@ export class MenuItemsController {
         ],
       }),
     )
-    file: Express.Multer.File, // Le fichier uploadé par Multer
+    file: Express.Multer.File,
+    @Req() req: Request,
   ): Promise<MenuItem> {
-    // Le fichier a été uploadé et stocké localement par Multer grâce à UseInterceptors.
-    // Maintenant, le service va enregistrer les métadonnées de l'image en BD
-    // et potentiellement faire du traitement d'image.
-
-    console.log('Fichier reçu dans le contrôleur:', file);
-
-    return this.menuItemsService.uploadImage(menuItemId, file);
+    const user = req.user;
+    return this.menuItemsService.uploadImage(menuItemId, file, user.id);
   }
 
-  // Si vous avez besoin de supprimer une image spécifique
   @Patch(':menuItemId/remove-image/:imageId')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Supprimer une image d’un menu item' })
   async removeRestaurantImage(
-    @Param('menuItemId') menuItemId: number,
-    @Param('imageId') imageId: number,
+    @Param('menuItemId', ParseIntPipe) menuItemId: number,
+    @Param('imageId', ParseIntPipe) imageId: number,
+    @Req() req: Request,
   ): Promise<MenuItem> {
-    return this.menuItemsService.removeImage(menuItemId, imageId);
+    const user = req.user;
+    return this.menuItemsService.removeImage(menuItemId, imageId, user.id);
   }
 
   // Route pour récupérer une image spécifique (optionnel si vous servez des fichiers statiques directement)

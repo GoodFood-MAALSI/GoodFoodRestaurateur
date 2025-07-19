@@ -8,11 +8,14 @@ import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.e
 import { MenuItemOptionValue } from '../menu_item_option_values/entities/menu_item_option_value.entity';
 import { Images } from '../images/entities/images.entity';
 import { IsPositionUniqueCreateMenuItemConstraint } from './decorators/is-position-unique-create-menu-items.validator';
+import { HttpModule } from '@nestjs/axios';
+import { UsersModule } from '../users/users.module';
+import { InterserviceAuthGuard } from '../interservice/guards/interservice-auth.guard';
 
 @Module({
-  imports:[TypeOrmModule.forFeature([MenuItem, MenuCategory, MenuItemOption, MenuItemOptionValue,Images])],
+  imports:[TypeOrmModule.forFeature([MenuItem, MenuCategory, MenuItemOption, MenuItemOptionValue,Images]), HttpModule, UsersModule],
   controllers: [MenuItemsController],
-  providers: [MenuItemsService, IsPositionUniqueCreateMenuItemConstraint],
+  providers: [MenuItemsService, IsPositionUniqueCreateMenuItemConstraint, InterserviceAuthGuard],
   exports: [IsPositionUniqueCreateMenuItemConstraint],
 })
 export class MenuItemsModule {}

@@ -3,12 +3,13 @@ import { RestaurantTypeService } from './restaurant_type.service';
 import { RestaurantTypeController } from './restaurant_type.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RestaurantType } from './entities/restaurant_type.entity';
-import { Restaurant } from '../restaurant/entities/restaurant.entity';
-import { MenuCategory } from '../menu_categories/entities/menu_category.entity';
+import { HttpModule } from '@nestjs/axios';
+import { InterserviceAuthGuard } from '../interservice/guards/interservice-auth.guard';
+import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RestaurantType])],
+  imports: [TypeOrmModule.forFeature([RestaurantType]), HttpModule, UsersModule],
   controllers: [RestaurantTypeController],
-  providers: [RestaurantTypeService],
+  providers: [RestaurantTypeService, InterserviceAuthGuard],
 })
 export class RestaurantTypeModule {}

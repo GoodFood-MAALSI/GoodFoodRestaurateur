@@ -11,7 +11,10 @@ import {
   ReviewStatus,
 } from './entities/client-review-restaurant.entity';
 import { CreateClientReviewRestaurantDto } from './dto/create-client-review-restaurant.dto';
-import { Restaurant, RestaurantStatus } from '../restaurant/entities/restaurant.entity';
+import {
+  Restaurant,
+  RestaurantStatus,
+} from '../restaurant/entities/restaurant.entity';
 import { InterserviceService } from '../interservice/interservice.service';
 import { Client } from '../interservice/interfaces/client.interface';
 import { Pagination } from '../utils/pagination';
@@ -26,12 +29,16 @@ export class ClientReviewRestaurantService {
     private readonly interserviceService: InterserviceService,
   ) {}
 
-  private async enrichReview(review: ClientReviewRestaurant): Promise<ClientReviewRestaurant & { client?: Client }> {
+  private async enrichReview(
+    review: ClientReviewRestaurant,
+  ): Promise<ClientReviewRestaurant & { client?: Client }> {
     const client = await this.interserviceService.fetchClient(review.clientId);
     return { ...review, client };
   }
 
-  private async enrichReviews(reviews: ClientReviewRestaurant[]): Promise<(ClientReviewRestaurant & { client?: Client })[]> {
+  private async enrichReviews(
+    reviews: ClientReviewRestaurant[],
+  ): Promise<(ClientReviewRestaurant & { client?: Client })[]> {
     return Promise.all(reviews.map((review) => this.enrichReview(review)));
   }
 
@@ -45,7 +52,9 @@ export class ClientReviewRestaurantService {
       where: { id: restaurantId },
     });
     if (!restaurant) {
-      throw new NotFoundException(`Restaurant avec l'ID ${restaurantId} non trouvé`);
+      throw new NotFoundException(
+        `Restaurant avec l'ID ${restaurantId} non trouvé`,
+      );
     }
     if (restaurant.status === RestaurantStatus.Suspended) {
       throw new HttpException(
@@ -57,7 +66,8 @@ export class ClientReviewRestaurantService {
     const clientReview = this.clientReviewRestaurantRepository.create({
       ...createClientReviewRestaurantDto,
     });
-    const savedReview = await this.clientReviewRestaurantRepository.save(clientReview);
+    const savedReview =
+      await this.clientReviewRestaurantRepository.save(clientReview);
     return this.enrichReview(savedReview);
   }
 
@@ -81,20 +91,26 @@ export class ClientReviewRestaurantService {
       where.status = status;
     }
 
-    const [reviews, total] = await this.clientReviewRestaurantRepository.findAndCount({
-      where,
-      relations: ['restaurant'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { created_at: 'DESC' },
-    });
+    const [reviews, total] =
+      await this.clientReviewRestaurantRepository.findAndCount({
+        where,
+        relations: ['restaurant'],
+        skip: (page - 1) * limit,
+        take: limit,
+        order: { created_at: 'DESC' },
+      });
 
     const enrichedReviews = await this.enrichReviews(reviews);
 
     let links: any = {};
     let meta: any = {};
     if (req) {
-      const pagination = Pagination.generatePaginationMetadata(req, page, total, limit);
+      const pagination = Pagination.generatePaginationMetadata(
+        req,
+        page,
+        total,
+        limit,
+      );
       links = pagination.links;
       meta = pagination.meta;
     }
@@ -102,7 +118,9 @@ export class ClientReviewRestaurantService {
     return { reviews: enrichedReviews, total, links, meta };
   }
 
-  async findOne(id: number): Promise<ClientReviewRestaurant & { client?: Client }> {
+  async findOne(
+    id: number,
+  ): Promise<ClientReviewRestaurant & { client?: Client }> {
     const clientReview = await this.clientReviewRestaurantRepository.findOne({
       where: { id },
     });
@@ -112,7 +130,9 @@ export class ClientReviewRestaurantService {
     return this.enrichReview(clientReview);
   }
 
-  async suspend(id: number): Promise<ClientReviewRestaurant & { client?: Client }> {
+  async suspend(
+    id: number,
+  ): Promise<ClientReviewRestaurant & { client?: Client }> {
     const clientReview = await this.clientReviewRestaurantRepository.findOne({
       where: { id },
     });
@@ -129,11 +149,14 @@ export class ClientReviewRestaurantService {
     }
 
     clientReview.status = ReviewStatus.SUSPENDED;
-    const updatedReview = await this.clientReviewRestaurantRepository.save(clientReview);
+    const updatedReview =
+      await this.clientReviewRestaurantRepository.save(clientReview);
     return this.enrichReview(updatedReview);
   }
 
-  async restore(id: number): Promise<ClientReviewRestaurant & { client?: Client }> {
+  async restore(
+    id: number,
+  ): Promise<ClientReviewRestaurant & { client?: Client }> {
     const clientReview = await this.clientReviewRestaurantRepository.findOne({
       where: { id },
     });
@@ -150,17 +173,25 @@ export class ClientReviewRestaurantService {
     }
 
     clientReview.status = ReviewStatus.ACTIVE;
-    const updatedReview = await this.clientReviewRestaurantRepository.save(clientReview);
+    const updatedReview =
+      await this.clientReviewRestaurantRepository.save(clientReview);
     return this.enrichReview(updatedReview);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: number, userId: number): Promise<void> {
     const clientReview = await this.clientReviewRestaurantRepository.findOne({
       where: { id },
     });
 
     if (!clientReview) {
-      throw new NotFoundException('Review not found');
+      throw new NotFoundException("L'avis n'a pas été trouvé");
+    }
+
+    if (clientReview.clientId !== userId) {
+      throw new HttpException(
+        "Vous n'êtes pas autorisé à supprimer cet avis",
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     if (clientReview.status === ReviewStatus.SUSPENDED) {
@@ -175,22 +206,31 @@ export class ClientReviewRestaurantService {
 
   async findByUser(
     clientId: number,
-    page = 1,
-    limit = 10,
+    page: number = 1,
+    limit: number = 10,
+    userId: number,
   ): Promise<{
     reviews: (ClientReviewRestaurant & { client?: Client })[];
     total: number;
   }> {
-    const [reviews, total] = await this.clientReviewRestaurantRepository.findAndCount({
-      where: {
-        clientId,
-        status: ReviewStatus.ACTIVE,
-      },
-      relations: ['restaurant'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { created_at: 'DESC' },
-    });
+    if (clientId !== userId) {
+      throw new HttpException(
+        "Vous n'êtes pas autorisé à voir les avis d'un autre client",
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const [reviews, total] =
+      await this.clientReviewRestaurantRepository.findAndCount({
+        where: {
+          clientId,
+          status: ReviewStatus.ACTIVE,
+        },
+        relations: ['restaurant'],
+        skip: (page - 1) * limit,
+        take: limit,
+        order: { created_at: 'DESC' },
+      });
 
     const enrichedReviews = await this.enrichReviews(reviews);
     return { reviews: enrichedReviews, total };
@@ -198,22 +238,35 @@ export class ClientReviewRestaurantService {
 
   async findByRestaurant(
     restaurantId: number,
-    page = 1,
-    limit = 10,
+    page: number = 1,
+    limit: number = 10,
+    userId: number,
   ): Promise<{
     reviews: (ClientReviewRestaurant & { client?: Client })[];
     total: number;
   }> {
-    const [reviews, total] = await this.clientReviewRestaurantRepository.findAndCount({
-      where: {
-        restaurantId,
-        status: ReviewStatus.ACTIVE,
-      },
-      relations: ['restaurant'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { created_at: 'DESC' },
+    const restaurant = await this.restaurantRepository.findOne({
+      where: { id: restaurantId, userId },
     });
+
+    if (!restaurant) {
+      throw new HttpException(
+        "Vous n'êtes pas autorisé à voir les avis de ce restaurant ou il n'existe pas",
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const [reviews, total] =
+      await this.clientReviewRestaurantRepository.findAndCount({
+        where: {
+          restaurantId,
+          status: ReviewStatus.ACTIVE,
+        },
+        relations: ['restaurant'],
+        skip: (page - 1) * limit,
+        take: limit,
+        order: { created_at: 'DESC' },
+      });
 
     const enrichedReviews = await this.enrichReviews(reviews);
     return { reviews: enrichedReviews, total };

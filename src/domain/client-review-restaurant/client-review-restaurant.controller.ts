@@ -10,8 +10,10 @@ import {
   Patch,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiOperation,
   ApiParam,
@@ -23,14 +25,17 @@ import { CreateClientReviewRestaurantDto } from './dto/create-client-review-rest
 import { Request } from 'express';
 import { Pagination } from '../utils/pagination';
 import { FilterClientReviewRestaurantDto } from './dto/filter-client-review-restaurant.dto';
+import { InterserviceAuthGuardFactory } from '../interservice/guards/interservice-auth.guard';
 
 @Controller('client-review-restaurant')
 export class ClientReviewRestaurantController {
   constructor(
-    private readonly ClientReviewRestaurantService: ClientReviewRestaurantService,
+    private readonly clientReviewRestaurantService: ClientReviewRestaurantService,
   ) {}
 
   @Get()
+  @UseGuards(InterserviceAuthGuardFactory(['super-admin', 'admin']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Récupérer tous les avis avec filtres optionnels' })
   async findAll(
     @Query() filters: FilterClientReviewRestaurantDto,
@@ -39,7 +44,7 @@ export class ClientReviewRestaurantController {
     try {
       const { rating, status, page = 1, limit = 10 } = filters;
       const { reviews, total } =
-        await this.ClientReviewRestaurantService.findAll(
+        await this.clientReviewRestaurantService.findAll(
           rating,
           status,
           page,
@@ -66,6 +71,8 @@ export class ClientReviewRestaurantController {
   }
 
   @Get('restaurant/:restaurantId')
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Récupérer les avis d'un restaurant spécifique" })
   @ApiParam({
     name: 'restaurantId',
@@ -89,11 +96,13 @@ export class ClientReviewRestaurantController {
         );
       }
 
+      const user = req.user;
       const { reviews, total } =
-        await this.ClientReviewRestaurantService.findByRestaurant(
+        await this.clientReviewRestaurantService.findByRestaurant(
           id,
           page,
           limit,
+          user.id,
         );
 
       const { links, meta } = Pagination.generatePaginationMetadata(
@@ -119,6 +128,8 @@ export class ClientReviewRestaurantController {
   }
 
   @Get('client/:clientId')
+  @UseGuards(InterserviceAuthGuardFactory(['client']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Récupérer les avis d'un client spécifique" })
   @ApiParam({ name: 'clientId', description: 'ID du client', type: Number })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
@@ -135,8 +146,14 @@ export class ClientReviewRestaurantController {
         throw new HttpException('clientId invalide', HttpStatus.BAD_REQUEST);
       }
 
+      const user = req.user;
       const { reviews, total } =
-        await this.ClientReviewRestaurantService.findByUser(id, page, limit);
+        await this.clientReviewRestaurantService.findByUser(
+          id,
+          page,
+          limit,
+          user.id,
+        );
 
       const { links, meta } = Pagination.generatePaginationMetadata(
         req,
@@ -161,13 +178,15 @@ export class ClientReviewRestaurantController {
   }
 
   @Post()
+  @UseGuards(InterserviceAuthGuardFactory(['client']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Ajouter un avis' })
   @ApiBody({ type: CreateClientReviewRestaurantDto })
   async create(
     @Body() createClientReviewRestaurantDto: CreateClientReviewRestaurantDto,
   ) {
     try {
-      const createdReview = await this.ClientReviewRestaurantService.create(
+      const createdReview = await this.clientReviewRestaurantService.create(
         createClientReviewRestaurantDto,
       );
       return createdReview;
@@ -183,6 +202,8 @@ export class ClientReviewRestaurantController {
   }
 
   @Patch(':id/suspend')
+  @UseGuards(InterserviceAuthGuardFactory(['super-admin', 'admin']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Suspendre un avis' })
   @ApiParam({ name: 'id', description: "ID de l'avis", type: Number })
   async suspend(@Param('id') id: string) {
@@ -191,7 +212,7 @@ export class ClientReviewRestaurantController {
       if (isNaN(reviewId)) {
         throw new HttpException('ID invalide', HttpStatus.BAD_REQUEST);
       }
-      return await this.ClientReviewRestaurantService.suspend(reviewId);
+      return await this.clientReviewRestaurantService.suspend(reviewId);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -207,6 +228,8 @@ export class ClientReviewRestaurantController {
   }
 
   @Patch(':id/restore')
+  @UseGuards(InterserviceAuthGuardFactory(['super-admin', 'admin']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Rétablir un avis' })
   @ApiParam({ name: 'id', description: "ID de l'avis", type: Number })
   async restore(@Param('id') id: string) {
@@ -215,7 +238,7 @@ export class ClientReviewRestaurantController {
       if (isNaN(reviewId)) {
         throw new HttpException('ID invalide', HttpStatus.BAD_REQUEST);
       }
-      return await this.ClientReviewRestaurantService.restore(reviewId);
+      return await this.clientReviewRestaurantService.restore(reviewId);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -231,14 +254,17 @@ export class ClientReviewRestaurantController {
   }
 
   @Delete(':id')
+  @UseGuards(InterserviceAuthGuardFactory(['client']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Supprimer un avis' })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @Req() req: Request) {
     try {
       const reviewId = parseInt(id);
       if (isNaN(reviewId)) {
         throw new HttpException('ID invalide', HttpStatus.BAD_REQUEST);
       }
-      return this.ClientReviewRestaurantService.remove(+id);
+      const user = req.user;
+      return this.clientReviewRestaurantService.remove(reviewId, user.id);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

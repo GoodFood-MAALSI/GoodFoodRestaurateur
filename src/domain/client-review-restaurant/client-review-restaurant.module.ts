@@ -7,14 +7,16 @@ import { ClientReviewRestaurantService } from './client-review-restaurant.servic
 import { HttpModule } from '@nestjs/axios';
 import { UsersModule } from '../users/users.module';
 import { InterserviceService } from '../interservice/interservice.service';
+import { InterserviceAuthGuard } from '../interservice/guards/interservice-auth.guard';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ClientReviewRestaurant]),
     HttpModule,
     UsersModule
+
   ],
   controllers: [ClientReviewRestaurantController],
-  providers: [IsEntityExistsConstraint, ClientReviewRestaurantService, InterserviceService],
+  providers: [IsEntityExistsConstraint, ClientReviewRestaurantService, InterserviceService, InterserviceAuthGuard],
 })
 export class ClientReviewRestaurantModule {}

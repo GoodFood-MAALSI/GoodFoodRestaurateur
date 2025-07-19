@@ -29,11 +29,9 @@ import {
   ApiParam,
   ApiQuery,
   ApiResponse,
-  ApiTags,
   ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { RestaurantFilterDto } from './dto/restaurant-filter.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { Pagination } from '../utils/pagination';
 import { FileInterceptor } from '@nestjs/platform-express/multer';
@@ -41,6 +39,7 @@ import { multerConfig } from 'src/multer.config';
 import { Restaurant } from './entities/restaurant.entity';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
 import { BypassResponseWrapper } from '../utils/decorators/bypass-response-wrapper.decorator';
+import { InterserviceAuthGuardFactory } from '../interservice/guards/interservice-auth.guard';
 import { Images } from '../images/entities/images.entity';
 
 @Controller('restaurant')
@@ -48,7 +47,9 @@ export class RestaurantController {
   constructor(private readonly restaurantService: RestaurantService) {}
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(
+    InterserviceAuthGuardFactory(['super-admin', 'admin', 'restaurateur']),
+  )
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Créer un restaurant' })
   @ApiBody({ type: CreateRestaurantDto })
@@ -83,6 +84,8 @@ export class RestaurantController {
   }
 
   @Get()
+  @UseGuards(InterserviceAuthGuardFactory(['client', 'super-admin', 'admin']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Récupérer la liste de tous les restaurants' })
   async findAll(@Query() filters: RestaurantFilterDto, @Req() req: Request) {
     try {
@@ -114,7 +117,7 @@ export class RestaurantController {
   }
 
   @Get('/me')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Récupérer les restaurants créés par l’utilisateur connecté',
@@ -161,6 +164,16 @@ export class RestaurantController {
   }
 
   @Get(':id')
+  @UseGuards(
+    InterserviceAuthGuardFactory([
+      'client',
+      'deliverer',
+      'super-admin',
+      'admin',
+      'restaurateur',
+    ]),
+  )
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Récupérer un restaurant en fonction de son id' })
   async findOne(@Param('id') id: string) {
     try {
@@ -232,7 +245,7 @@ export class RestaurantController {
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
   @ApiOperation({ summary: "Mettre à jour les informations d'un restaurant" })
   @ApiBody({ type: UpdateRestaurantDto })
@@ -250,17 +263,15 @@ export class RestaurantController {
         );
       }
 
-      const restaurant = await this.restaurantService.findOne(+id);
-      if (!restaurant) {
-        throw new HttpException(
-          `Restaurant with ID ${id} not found`,
-          HttpStatus.NOT_FOUND,
-        );
+      const restaurantId = parseInt(id);
+      if (isNaN(restaurantId)) {
+        throw new HttpException('ID invalide', HttpStatus.BAD_REQUEST);
       }
 
       const updatedRestaurant = await this.restaurantService.update(
-        +id,
+        restaurantId,
         updateRestaurantDto,
+        user.id,
       );
       return updatedRestaurant;
     } catch (error) {
@@ -269,7 +280,7 @@ export class RestaurantController {
       }
       throw new HttpException(
         {
-          message: 'Failed to update restaurant',
+          message: 'Échec de la mise à jour du restaurant',
           error: error.message,
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -278,7 +289,7 @@ export class RestaurantController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Supprimer un restaurant' })
   async remove(@Param('id') id: string, @Req() req: Request) {
@@ -291,15 +302,12 @@ export class RestaurantController {
         );
       }
 
-      const restaurant = await this.restaurantService.findOne(+id);
-      if (!restaurant) {
-        throw new HttpException(
-          `Restaurant with ID ${id} not found`,
-          HttpStatus.NOT_FOUND,
-        );
+      const restaurantId = parseInt(id);
+      if (isNaN(restaurantId)) {
+        throw new HttpException('ID invalide', HttpStatus.BAD_REQUEST);
       }
 
-      await this.restaurantService.remove(+id);
+      await this.restaurantService.remove(restaurantId, user.id);
       return { message: 'Restaurant supprimé avec succès' };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -316,6 +324,8 @@ export class RestaurantController {
   }
 
   @Patch(':id/suspend')
+  @UseGuards(InterserviceAuthGuardFactory(['super-admin', 'admin']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Suspendre un restaurant spécifique' })
   @ApiResponse({ status: 200, description: 'Restaurant suspendu avec succès' })
   @ApiResponse({ status: 403, description: 'Accès interdit' })
@@ -348,6 +358,8 @@ export class RestaurantController {
   }
 
   @Patch(':id/restore')
+  @UseGuards(InterserviceAuthGuardFactory(['super-admin', 'admin']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Réactiver un restaurant spécifique' })
   @ApiResponse({ status: 200, description: 'Restaurant réactivé avec succès' })
   @ApiResponse({ status: 403, description: 'Accès interdit' })
@@ -380,6 +392,8 @@ export class RestaurantController {
   }
 
   @Post(':id/upload-image')
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Uploader une image pour un restaurant spécifique' })
   @ApiParam({ name: 'id', description: 'ID du restaurant', type: Number })
   @ApiConsumes('multipart/form-data')
@@ -398,7 +412,7 @@ export class RestaurantController {
   })
   @UseInterceptors(FileInterceptor('image', multerConfig))
   async uploadRestaurantImage(
-    @Param('id') restaurantId: number,
+    @Param('id') id: string,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -408,15 +422,81 @@ export class RestaurantController {
       }),
     )
     file: Express.Multer.File,
+    @Req() req: Request,
   ): Promise<Restaurant> {
-    return this.restaurantService.uploadImage(restaurantId, file);
+    try {
+      const restaurantId = parseInt(id);
+      if (isNaN(restaurantId)) {
+        throw new HttpException('ID invalide', HttpStatus.BAD_REQUEST);
+      }
+
+      const user = req.user as JwtPayloadType;
+      if (!user || !user.id) {
+        throw new HttpException(
+          'Utilisateur non authentifié',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      return await this.restaurantService.uploadImage(
+        restaurantId,
+        file,
+        user.id,
+      );
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        {
+          message: "Échec de l'upload de l'image",
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   @Patch(':restaurantId/remove-image/:imageId')
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Supprimer une image d'un restaurant" })
   async removeRestaurantImage(
-    @Param('restaurantId') restaurantId: number,
-    @Param('imageId') imageId: number,
+    @Param('restaurantId') restaurantId: string,
+    @Param('imageId') imageId: string,
+    @Req() req: Request,
   ): Promise<Restaurant> {
-    return this.restaurantService.removeImage(restaurantId, imageId);
+    try {
+      const restaurantIdNum = parseInt(restaurantId);
+      const imageIdNum = parseInt(imageId);
+      if (isNaN(restaurantIdNum) || isNaN(imageIdNum)) {
+        throw new HttpException('ID invalide', HttpStatus.BAD_REQUEST);
+      }
+
+      const user = req.user as JwtPayloadType;
+      if (!user || !user.id) {
+        throw new HttpException(
+          'Utilisateur non authentifié',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      return await this.restaurantService.removeImage(
+        restaurantIdNum,
+        imageIdNum,
+        user.id,
+      );
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        {
+          message: "Échec de la suppression de l'image",
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

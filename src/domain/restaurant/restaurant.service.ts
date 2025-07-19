@@ -48,6 +48,22 @@ export class RestaurantService {
     private readonly images_repository: Repository<Images>,
   ) {}
 
+  private async checkRestaurantOwnership(
+    restaurantId: number,
+    userId: number,
+  ): Promise<void> {
+    const restaurant = await this.restaurant_repository.findOne({
+      where: { id: restaurantId, userId },
+    });
+
+    if (!restaurant) {
+      throw new HttpException(
+        "Vous n'êtes pas autorisé à modifier ce restaurant ou il n'existe pas",
+        HttpStatus.FORBIDDEN,
+      );
+    }
+  }
+
   async create(createRestaurantDto: CreateRestaurantDto & { userId: number }) {
     const { restaurantTypeId, userId, ...restaurantData } = createRestaurantDto;
 
@@ -198,11 +214,14 @@ export class RestaurantService {
     return restaurant;
   }
 
-  async update(id: number, updateDto: UpdateRestaurantDto) {
+  async update(
+    id: number,
+    updateDto: UpdateRestaurantDto,
+    userId: number,
+  ): Promise<Restaurant> {
+    await this.checkRestaurantOwnership(id, userId);
+
     const restaurant = await this.findOne(id);
-    if (!restaurant) {
-      throw new NotFoundException(`Restaurant with ID ${id} not found`);
-    }
 
     if (restaurant.status === RestaurantStatus.Suspended) {
       throw new HttpException(
@@ -227,7 +246,9 @@ export class RestaurantService {
     return await this.restaurant_repository.save(restaurant);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: number, userId: number): Promise<void> {
+    await this.checkRestaurantOwnership(id, userId);
+
     const restaurant = await this.restaurant_repository.findOne({
       where: { id },
     });
@@ -356,7 +377,10 @@ export class RestaurantService {
   async uploadImage(
     restaurantId: number,
     file: Express.Multer.File,
+    userId: number,
   ): Promise<Restaurant> {
+    await this.checkRestaurantOwnership(restaurantId, userId);
+
     const restaurant = await this.restaurant_repository.findOne({
       where: { id: restaurantId },
       relations: ['images'],
@@ -372,7 +396,7 @@ export class RestaurantService {
           ),
         );
       throw new NotFoundException(
-        `Restaurant with ID ${restaurantId} not found.`,
+        `Restaurant avec l'ID ${restaurantId} non trouvé.`,
       );
     }
 
@@ -421,8 +445,8 @@ export class RestaurantService {
       }
 
       const filenameWithoutExt = file.filename.split('.')[0];
-      const newFileName = `${filenameWithoutExt}-${Date.now()}.webp`;
-      const processedFilePathFull = join(file.destination, newFileName);
+      newFileName = `${filenameWithoutExt}-${Date.now()}.webp`;
+      processedFilePathFull = join(file.destination, newFileName);
       const relativePathForDb = join('uploads', newFileName);
 
       await sharp(file.path)
@@ -466,27 +490,44 @@ export class RestaurantService {
         error.stack,
       );
       if (file && file.path) {
-        await fs
-          .unlink(file.path)
-          .catch((e) =>
-            this.logger.error(
-              `Erreur lors de la suppression du fichier temporaire en cas d'erreur globale: ${file.path}`,
-              e.stack,
-            ),
+        const fileExists = await fs
+          .access(file.path)
+          .then(() => true)
+          .catch(() => false);
+        if (fileExists) {
+          await fs
+            .unlink(file.path)
+            .catch((e) =>
+              this.logger.error(
+                `Erreur lors de la suppression du fichier temporaire en cas d'erreur globale: ${file.path}`,
+                e.stack,
+              ),
+            );
+        } else {
+          this.logger.warn(
+            `Cleanup: Fichier original temporaire ${file.path} non trouvé.`,
           );
+        }
       }
-      if (
-        processedFilePathFull &&
-        (await fs.stat(processedFilePathFull).catch(() => null))
-      ) {
-        await fs
-          .unlink(processedFilePathFull)
-          .catch((e) =>
-            this.logger.error(
-              `Erreur lors de la suppression du fichier traité en cas d'erreur globale: ${processedFilePathFull}`,
-              e.stack,
-            ),
+      if (processedFilePathFull) {
+        const processedFileExists = await fs
+          .access(processedFilePathFull)
+          .then(() => true)
+          .catch(() => false);
+        if (processedFileExists) {
+          await fs
+            .unlink(processedFilePathFull)
+            .catch((e) =>
+              this.logger.error(
+                `Erreur lors de la suppression du fichier traité en cas d'erreur globale: ${processedFilePathFull}`,
+                e.stack,
+              ),
+            );
+        } else {
+          this.logger.warn(
+            `Cleanup: Fichier traité ${processedFilePathFull} non trouvé.`,
           );
+        }
       }
 
       throw new InternalServerErrorException(
@@ -498,7 +539,10 @@ export class RestaurantService {
   async removeImage(
     restaurantId: number,
     imageId: number,
+    userId: number,
   ): Promise<Restaurant> {
+    await this.checkRestaurantOwnership(restaurantId, userId);
+
     const restaurant = await this.restaurant_repository.findOne({
       where: { id: restaurantId },
       relations: ['images'],
@@ -506,7 +550,7 @@ export class RestaurantService {
 
     if (!restaurant) {
       throw new NotFoundException(
-        `Restaurant with ID ${restaurantId} not found.`,
+        `Restaurant avec l'ID ${restaurantId} non trouvé.`,
       );
     }
 
@@ -522,7 +566,7 @@ export class RestaurantService {
     );
     if (!imageToRemove) {
       throw new NotFoundException(
-        `Image with ID ${imageId} not found for Restaurant ${restaurantId} or not associated.`,
+        `Image avec l'ID ${imageId} non trouvée pour le restaurant ${restaurantId} ou non associée.`,
       );
     }
 

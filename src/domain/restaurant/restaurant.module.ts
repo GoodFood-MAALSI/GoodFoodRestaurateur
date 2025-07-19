@@ -15,6 +15,7 @@ import { MenuItemOption } from '../menu_item_options/entities/menu_item_option.e
 import { MenuItemOptionValue } from '../menu_item_option_values/entities/menu_item_option_value.entity';
 import { ClientReviewRestaurant } from '../client-review-restaurant/entities/client-review-restaurant.entity';
 import { Images } from '../images/entities/images.entity';
+import { InterserviceAuthGuard } from '../interservice/guards/interservice-auth.guard';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { Images } from '../images/entities/images.entity';
     RestaurantService,
     IsEntityExistsConstraint,
     IsSiretUniqueConstraint,
+    InterserviceAuthGuard
   ],
   exports: [RestaurantService],
 })
