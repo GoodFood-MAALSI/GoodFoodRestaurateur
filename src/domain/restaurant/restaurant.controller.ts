@@ -41,6 +41,7 @@ import { multerConfig } from 'src/multer.config';
 import { Restaurant } from './entities/restaurant.entity';
 import { JwtPayloadType } from '../auth/strategies/types/jwt-payload.type';
 import { BypassResponseWrapper } from '../utils/decorators/bypass-response-wrapper.decorator';
+import { Images } from '../images/entities/images.entity';
 
 @Controller('restaurant')
 export class RestaurantController {
@@ -188,12 +189,20 @@ export class RestaurantController {
   @Get('interservice/:id')
   @ApiExcludeEndpoint()
   @BypassResponseWrapper()
-  @ApiOperation({ summary: 'Récupérer un restaurant pour appels interservices' })
+  @ApiOperation({
+    summary: 'Récupérer un restaurant pour appels interservices',
+  })
   @ApiParam({ name: 'id', description: 'ID du restaurant', type: Number })
-  @ApiResponse({ status: 200, description: 'Restaurant récupéré avec succès', type: Restaurant })
+  @ApiResponse({
+    status: 200,
+    description: 'Restaurant récupéré avec succès',
+    type: Restaurant,
+  })
   @ApiResponse({ status: 400, description: 'ID invalide' })
   @ApiResponse({ status: 404, description: 'Restaurant non trouvé' })
-  async getRestaurantForInterservice(@Param('id') id: string): Promise<Partial<Restaurant>> {
+  async getRestaurantForInterservice(
+    @Param('id') id: string,
+  ): Promise<Partial<Restaurant>> {
     const restaurantId = parseInt(id);
     if (isNaN(restaurantId)) {
       throw new HttpException('ID doit être un nombre', HttpStatus.BAD_REQUEST);
@@ -214,6 +223,11 @@ export class RestaurantController {
       country: restaurant.country,
       email: restaurant.email,
       phone_number: restaurant.phone_number,
+      long: restaurant.long,
+      lat: restaurant.lat,
+      images: restaurant.images?.map((image) => ({
+        ...image,
+      })) as Images[],
     };
   }
 
