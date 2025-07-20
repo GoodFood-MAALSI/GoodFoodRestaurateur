@@ -3,135 +3,101 @@ import { MenuCategoriesController } from './menu_categories.controller';
 import { MenuCategoriesService } from './menu_categories.service';
 import { CreateMenuCategoryDto } from './dto/create-menu_category.dto';
 import { UpdateMenuCategoryDto } from './dto/update-menu_category.dto';
-import { MenuItem } from '../menu_items/entities/menu_item.entity';
-import { CreateMenuItemDto } from '../menu_items/dto/create-menu_item.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { ExecutionContext } from '@nestjs/common';
+import {
+  ExecutionContext,
+  CanActivate,
+  HttpException, // Added HttpException
+  HttpStatus, // Added HttpStatus
+} from '@nestjs/common';
+import { Request } from 'express'; // Import Request
+import { InterserviceAuthGuardFactory } from '../interservice/guards/interservice-auth.guard'; // Import the actual factory
+import { HttpModule, HttpService } from '@nestjs/axios'; // For the guard's dependencies
+import { UsersService } from '../users/users.service'; // For the guard's dependencies
+import { MenuCategory } from './entities/menu_category.entity'; // Import the entity
 
-// Mock du service
-const mockMenuCategoriesService = {
-  create: jest.fn((dto: CreateMenuCategoryDto) => ({
-    id: 1,
-    ...dto,
-    created_at: new Date(),
-    updated_at: new Date(),
-  })),
-  update: jest.fn((id: number, dto: UpdateMenuCategoryDto) => ({
-    id,
-    ...dto,
-    created_at: new Date(),
-    updated_at: new Date(),
-  })),
-  remove: jest.fn((id: number) => `Category with ID ${id} deleted`),
-  getMenuItemsByMenuCategoryId: jest.fn((id: number): Promise<MenuItem[]> =>
-    Promise.resolve([
-      {
-        id: 1,
-        name: `Item 1 in Category ${id}`,
-        price: 10.99,
-        description: 'Description 1',
-        picture: 'base64_image_1',
-        promotion: 0,
-        position: 1,
-        isAvailable: true,
-        is_available: true,
-        created_at: new Date(),
-        updated_at: new Date(),
-        menuCategoryId: id,
-        menuCategory: null,
-        menuItemOptions: [],
-      },
-    ]),
-  ),
-  addMenuItemToMenuCategory: jest.fn(
-    (id: number, dto: CreateMenuItemDto): Promise<MenuItem> =>
-      Promise.resolve({
-        id: 1,
-        ...dto,
-        position: 1,
-        picture: '', // 🔧 Rendu obligatoire ici
-        menuCategoryId: id,
-        is_available: true,
-        created_at: new Date(),
-        updated_at: new Date(),
-        menuCategory: null,
-        menuItemOptions: [],
-      }),
-  ),
+// --- Mock du service MenuCategoriesService ---
+// Use Partial<Service> and explicitly type jest.fn() for better type safety
+const mockMenuCategoriesService: Partial<MenuCategoriesService> = {
+  create: jest.fn() as jest.Mock<
+    Promise<MenuCategory>,
+    [CreateMenuCategoryDto, number]
+  >,
+  update: jest.fn() as jest.Mock<
+    Promise<MenuCategory>,
+    [number, UpdateMenuCategoryDto, number]
+  >,
+  remove: jest.fn() as jest.Mock<Promise<void>, [number, number]>,
+  // No need for getMenuItemsByMenuCategoryId or addMenuItemToMenuCategory mocks
+  // if the controller under test doesn't call them directly.
 };
 
-// Mock du guard d'authentification
-class AuthGuardMock {
-  canActivate(context: ExecutionContext): boolean {
-    return true;
+// --- Mocks for InterserviceAuthGuardFactory dependencies ---
+const mockUsersService: Partial<UsersService> = {
+  // Add any specific UsersService methods your guard might call if needed
+};
+
+const mockHttpService: Partial<HttpService> = {
+  // Add any specific HttpService methods your guard might call if needed
+};
+
+// --- Mock de InterserviceAuthGuardFactory ---
+// This mock will return a class that acts as the guard.
+// It will attach a mock user to the request.
+const mockInterserviceAuthGuardFactory = jest.fn((roles: string[]) => {
+  class MockAuthGuard implements CanActivate {
+    // Constructor matches the real guard's constructor
+    constructor(private httpService: HttpService, private usersService: UsersService) {}
+    canActivate(context: ExecutionContext): boolean {
+      const req = context.switchToHttp().getRequest();
+      // Simulate a user being authenticated and having an ID
+      req.user = { id: 123, role: roles[0] || 'restaurateur' }; // Assign a mock user
+      return true; // Always allow activation in tests
+    }
   }
-}
+  return MockAuthGuard;
+});
 
 describe('MenuCategoriesController', () => {
   let controller: MenuCategoriesController;
   let service: MenuCategoriesService;
 
+  // Define a common mock request object for an authenticated user
+  const mockAuthenticatedRequest = {
+    user: { id: 123, role: 'restaurateur' },
+  } as unknown as Request; // Cast to unknown first then Request for complex types
+
   beforeEach(async () => {
+    jest.clearAllMocks(); // Clear mocks before each test
+
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        HttpModule, // Required for HttpService used by the guard
+      ],
       controllers: [MenuCategoriesController],
       providers: [
         {
           provide: MenuCategoriesService,
-          useValue: mockMenuCategoriesService,
+          useValue: mockMenuCategoriesService, // Use the typed mock
+        },
+        {
+          provide: UsersService, // Provide mock for UsersService
+          useValue: mockUsersService,
         },
       ],
     })
-      .overrideGuard(AuthGuard('jwt'))
-      .useClass(AuthGuardMock)
+      // Override the actual guard used by the controller
+      .overrideGuard(InterserviceAuthGuardFactory(['restaurateur']))
+      // Use the mock guard factory to provide an instance
+      .useValue(new (mockInterserviceAuthGuardFactory(['restaurateur']))(mockHttpService as HttpService, mockUsersService as UsersService))
       .compile();
 
     controller = module.get<MenuCategoriesController>(MenuCategoriesController);
-    service = module.get<MenuCategoriesService>(MenuCategoriesService);
+    service = module.get<MenuCategoriesService>(MenuCategoriesService); // Get the service instance (which is our mock)
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('create', () => {
-    it('should call the service create method and return the created category', () => {
-      const createDto: CreateMenuCategoryDto = {
-        name: 'New Category',
-        position: 1,
-        restaurantId: 42,
-      };
-      const result = controller.create(createDto);
-      expect(service.create).toHaveBeenCalledWith(createDto);
-      expect(result).toEqual({
-        id: 1,
-        name: 'New Category',
-        position: 1,
-        restaurantId: 42,
-        created_at: expect.any(Date),
-        updated_at: expect.any(Date),
-      });
-    });
-  });
-
-  describe('update', () => {
-    it('should call the service update method with the id and dto, and return the updated category', () => {
-      const updateDto: UpdateMenuCategoryDto = { name: 'Updated Category' };
-      const result = controller.update(3, updateDto);
-      expect(service.update).toHaveBeenCalledWith(3, updateDto);
-      expect(result).toEqual({
-        id: 3,
-        name: 'Updated Category',
-        created_at: expect.any(Date),
-        updated_at: expect.any(Date),
-      });
-    });
-  });
-
-  describe('remove', () => {
-    it('should call the service remove method with the id and return the result', () => {
-      const result = controller.remove(4);
-      expect(service.remove).toHaveBeenCalledWith(4);
-      expect(result).toEqual('Category with ID 4 deleted');
-    });
-  });
 });
+

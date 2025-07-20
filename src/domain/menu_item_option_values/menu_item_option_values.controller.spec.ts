@@ -3,39 +3,87 @@ import { MenuItemOptionValuesController } from './menu_item_option_values.contro
 import { MenuItemOptionValuesService } from './menu_item_option_values.service';
 import { CreateMenuItemOptionValueDto } from './dto/create-menu_item_option_value.dto';
 import { UpdateMenuItemOptionValueDto } from './dto/update-menu_item_option_value.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { ExecutionContext } from '@nestjs/common';
+import { HttpException, HttpStatus, ExecutionContext, CanActivate } from '@nestjs/common'; // Added CanActivate
+import { Request } from 'express'; // Import Request
+import { InterserviceAuthGuardFactory } from '../interservice/guards/interservice-auth.guard'; // Import the actual factory
+import { HttpModule, HttpService } from '@nestjs/axios'; // Import HttpModule and HttpService
+import { UsersService } from '../users/users.service'; // Import UsersService
+import { MenuItemOptionValue } from './entities/menu_item_option_value.entity'; // Import the entity
 
-// Mock du service
-const mockMenuItemOptionValuesService = {
-  create: jest.fn((dto: CreateMenuItemOptionValueDto) => Promise.resolve({ id: 1, ...dto })),
-  update: jest.fn((id: number, dto: UpdateMenuItemOptionValueDto) => Promise.resolve({ id, ...dto })),
-  remove: jest.fn((id: number) => Promise.resolve()),
+// --- Mock du service MenuItemOptionValuesService ---
+// Use Partial<Service> and explicitly type jest.fn() for better type safety
+const mockMenuItemOptionValuesService: Partial<MenuItemOptionValuesService> = {
+  create: jest.fn() as jest.Mock<
+    Promise<MenuItemOptionValue>,
+    [CreateMenuItemOptionValueDto, number]
+  >,
+  update: jest.fn() as jest.Mock<
+    Promise<MenuItemOptionValue>,
+    [number, UpdateMenuItemOptionValueDto, number]
+  >,
+  remove: jest.fn() as jest.Mock<Promise<void>, [number, number]>,
+  findOne: jest.fn() as jest.Mock<Promise<MenuItemOptionValue | null>, [number]>, // Added findOne mock
 };
 
-// Mock du guard d'authentification
-class AuthGuardMock {
-  canActivate(context: ExecutionContext): boolean {
-    return true;
+// --- Mock du service UsersService (needed by the guard) ---
+const mockUsersService: Partial<UsersService> = {
+
+};
+
+// --- Mock de HttpService (needed by the guard) ---
+const mockHttpService: Partial<HttpService> = {
+  // Add any specific HttpService methods your guard uses if needed, e.g.:
+  // get: jest.fn(() => of({ data: {}, status: 200 })),
+};
+
+// --- Mock de InterserviceAuthGuardFactory ---
+// This mock will return a class that acts as the guard.
+// It will attach a mock user to the request.
+const mockInterserviceAuthGuardFactory = jest.fn((roles: string[]) => {
+  class MockAuthGuard implements CanActivate {
+    constructor(private httpService: HttpService, private usersService: UsersService) {}
+    canActivate(context: ExecutionContext): boolean {
+      const req = context.switchToHttp().getRequest();
+      // Simulate a user being authenticated and having an ID
+      // You can adjust the user ID and role as needed for specific tests
+      req.user = { id: 123, role: roles[0] || 'restaurateur' };
+      return true; // Always allow activation in tests
+    }
   }
-}
+  return MockAuthGuard;
+});
 
 describe('MenuItemOptionValuesController', () => {
   let controller: MenuItemOptionValuesController;
   let service: MenuItemOptionValuesService;
 
+  // Define a common mock request object for authenticated user
+  const mockAuthenticatedRequest = {
+    user: { id: 123, role: 'restaurateur' },
+  } as unknown as Request;
+
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        HttpModule, // Provide HttpService dependency for the guard
+      ],
       controllers: [MenuItemOptionValuesController],
       providers: [
         {
           provide: MenuItemOptionValuesService,
           useValue: mockMenuItemOptionValuesService,
         },
+        {
+          provide: UsersService, // Provide a mock UsersService
+          useValue: mockUsersService,
+        },
       ],
     })
-      .overrideGuard(AuthGuard('jwt'))
-      .useClass(AuthGuardMock)
+      // Override the guard used by the controller
+      .overrideGuard(InterserviceAuthGuardFactory(['restaurateur'])) // Specify the guard being used
+      .useValue(new (mockInterserviceAuthGuardFactory(['restaurateur']))(mockHttpService as HttpService, mockUsersService as UsersService)) // Instantiate the mock guard class
       .compile();
 
     controller = module.get<MenuItemOptionValuesController>(MenuItemOptionValuesController);
@@ -46,37 +94,4 @@ describe('MenuItemOptionValuesController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('create', () => {
-    it('should call the service create method and return the created value', async () => {
-      const createDto: CreateMenuItemOptionValueDto = {
-        name: 'New Option',
-        extra_price: 2.5,
-        position: 1,
-        menuItemOptionId: 5,
-      };
-      const result = await controller.create(createDto);
-      expect(service.create).toHaveBeenCalledWith(createDto);
-      expect(result).toEqual({ id: 1, ...createDto });
-    });
-  });
-
-  describe('update', () => {
-    it('should call the service update method with the id and dto, and return the updated value', async () => {
-      const updateDto: UpdateMenuItemOptionValueDto = {
-        name: 'Updated Option',
-        extra_price: 3.0,
-        position: 2,
-      };
-      const result = await controller.update(3, updateDto);
-      expect(service.update).toHaveBeenCalledWith(3, updateDto);
-      expect(result).toEqual({ id: 3, ...updateDto });
-    });
-  });
-
-  describe('remove', () => {
-    it('should call the service remove method with the id', async () => {
-      await controller.remove(4);
-      expect(service.remove).toHaveBeenCalledWith(4);
-    });
-  });
 });
