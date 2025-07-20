@@ -101,7 +101,7 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @UseGuards(InterserviceAuthGuardFactory(['super-admin', 'admin', 'restaurateur']))
+  @UseGuards(InterserviceAuthGuardFactory(['restaurateur']))
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Mettre à jour le prénom et/ou nom d'un utilisateur",
