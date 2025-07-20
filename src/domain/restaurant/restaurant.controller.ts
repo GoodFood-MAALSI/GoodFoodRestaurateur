@@ -238,6 +238,7 @@ export class RestaurantController {
       phone_number: restaurant.phone_number,
       long: restaurant.long,
       lat: restaurant.lat,
+      userId: restaurant.userId,
       images: restaurant.images?.map((image) => ({
         ...image,
       })) as Images[],

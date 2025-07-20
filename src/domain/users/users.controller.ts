@@ -256,7 +256,7 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Non autorisé' })
   @ApiResponse({ status: 403, description: 'Rôle invalide' })
   @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
-  async verifyRestaurateur(@Param('userId') userId: string, @Req() req) {
+  async verifyRestaurateur(@Param('userId') userId: string, @Req() req: Request) {
     const token = req.headers['authorization']?.split(' ')[1];
     if (!token) {
       throw new HttpException('Token manquant', HttpStatus.UNAUTHORIZED);
